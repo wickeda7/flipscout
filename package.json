@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "verify:css": "node verify-css-setup.mjs"
+    "verify:css": "node verify-css-setup.mjs",
+    "verify:tailwind": "node verify-tailwind.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
@@ -22,7 +23,10 @@
     "@types/react-dom": "^19.2.0",
     "typescript": "^5.7.2",
     "eslint": "^9.0.0",
-    "eslint-config-next": "16.3.4"
+    "eslint-config-next": "16.3.4",
+    "tailwindcss": "^4.1.0",
+    "@tailwindcss/postcss": "^4.1.0",
+    "postcss": "^8.5.0"
   },
   "engines": {
     "node": ">=20.9.0"

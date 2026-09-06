@@ -33,7 +33,12 @@ export function Dashboard() {
       <div className="container">
         <header className="header">
           <div>
-            <p className="date">Saturday, September 5</p>
+            <div className="mb-2 flex items-center gap-2">
+              <p className="date !m-0">Saturday, September 5</p>
+              <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                Tailwind 4
+              </span>
+            </div>
             <h1 className="title">Today&apos;s opportunities</h1>
             <p className="subtitle">Clearance inventory ranked by expected resale value.</p>
           </div>

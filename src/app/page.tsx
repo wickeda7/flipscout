@@ -3,7 +3,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 
 export default function Home() {
   return (
-    <div className="app-shell">
+    <div className="app-shell selection:bg-white selection:text-black">
       <Sidebar />
       <Dashboard />
     </div>
