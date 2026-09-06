@@ -1,6 +1,28 @@
-import type { Deal } from "@/types/deal";
+import type { Deal, DealStatus } from "@/types/deal";
+import { calculateProfit } from "@/lib/profit";
+import { calculateBuyScore } from "@/lib/buy-score";
 
-export const mockDeals: Deal[] = [
+interface RawDeal {
+  id: string;
+  productName: string;
+  brand: string;
+  retailer: string;
+  storeName: string;
+  city: string;
+  state: string;
+  distanceMiles: number;
+  retailPrice: number;
+  clearancePrice: number;
+  resalePrice: number;
+  marketplaceFeePercent: number;
+  shippingCost: number;
+  otherCosts: number;
+  inventory: number;
+  category: string;
+  updatedMinutesAgo: number;
+}
+
+const rawDeals: RawDeal[] = [
   {
     id: "deal-001",
     productName: "20V MAX XR Brushless Impact Driver Kit",
@@ -13,11 +35,10 @@ export const mockDeals: Deal[] = [
     retailPrice: 179,
     clearancePrice: 49,
     resalePrice: 119,
-    estimatedProfit: 47,
-    roi: 95.9,
+    marketplaceFeePercent: 13.25,
+    shippingCost: 10,
+    otherCosts: 0,
     inventory: 6,
-    buyScore: 94,
-    status: "strong-buy",
     category: "Tools",
     updatedMinutesAgo: 8,
   },
@@ -33,11 +54,10 @@ export const mockDeals: Deal[] = [
     retailPrice: 149,
     clearancePrice: 39,
     resalePrice: 94,
-    estimatedProfit: 36,
-    roi: 92.3,
+    marketplaceFeePercent: 13.25,
+    shippingCost: 8,
+    otherCosts: 0,
     inventory: 4,
-    buyScore: 89,
-    status: "buy",
     category: "Tools",
     updatedMinutesAgo: 12,
   },
@@ -53,11 +73,10 @@ export const mockDeals: Deal[] = [
     retailPrice: 249,
     clearancePrice: 119,
     resalePrice: 199,
-    estimatedProfit: 42,
-    roi: 35.3,
+    marketplaceFeePercent: 13.25,
+    shippingCost: 25,
+    otherCosts: 0,
     inventory: 3,
-    buyScore: 78,
-    status: "maybe",
     category: "Electronics",
     updatedMinutesAgo: 21,
   },
@@ -73,11 +92,10 @@ export const mockDeals: Deal[] = [
     retailPrice: 299,
     clearancePrice: 104.99,
     resalePrice: 184,
-    estimatedProfit: 34,
-    roi: 32.4,
+    marketplaceFeePercent: 13.25,
+    shippingCost: 22,
+    otherCosts: 0,
     inventory: 2,
-    buyScore: 72,
-    status: "maybe",
     category: "Home",
     updatedMinutesAgo: 34,
   },
@@ -93,11 +111,10 @@ export const mockDeals: Deal[] = [
     retailPrice: 159,
     clearancePrice: 35,
     resalePrice: 98,
-    estimatedProfit: 43,
-    roi: 122.9,
+    marketplaceFeePercent: 13.25,
+    shippingCost: 8,
+    otherCosts: 0,
     inventory: 8,
-    buyScore: 96,
-    status: "strong-buy",
     category: "Tools",
     updatedMinutesAgo: 5,
   },
@@ -113,15 +130,65 @@ export const mockDeals: Deal[] = [
     retailPrice: 129,
     clearancePrice: 49,
     resalePrice: 79,
-    estimatedProfit: 12,
-    roi: 24.5,
+    marketplaceFeePercent: 13.25,
+    shippingCost: 13,
+    otherCosts: 0,
     inventory: 7,
-    buyScore: 58,
-    status: "skip",
     category: "Kitchen",
     updatedMinutesAgo: 19,
   },
 ];
 
-export const categories = ["All categories", "Tools", "Electronics", "Home", "Kitchen"];
-export const retailers = ["All stores", "Home Depot", "Lowe's", "Walmart", "Target"];
+function toStatus(label: string): DealStatus {
+  if (label === "STRONG BUY") return "strong-buy";
+  if (label === "BUY") return "buy";
+  if (label === "MAYBE") return "maybe";
+  return "skip";
+}
+
+export const mockDeals: Deal[] = rawDeals.map((deal) => {
+  const discountPercent =
+    ((deal.retailPrice - deal.clearancePrice) / deal.retailPrice) * 100;
+
+  const profit = calculateProfit({
+    purchasePrice: deal.clearancePrice,
+    resalePrice: deal.resalePrice,
+    marketplaceFeePercent: deal.marketplaceFeePercent,
+    shippingCost: deal.shippingCost,
+    otherCosts: deal.otherCosts,
+  });
+
+  const buy = calculateBuyScore({
+    roiPercent: profit.roiPercent,
+    netProfit: profit.netProfit,
+    discountPercent,
+    inventory: deal.inventory,
+    distanceMiles: deal.distanceMiles,
+  });
+
+  return {
+    ...deal,
+    estimatedProfit: profit.netProfit,
+    roi: profit.roiPercent,
+    margin: profit.marginPercent,
+    breakEvenPrice: profit.breakEvenPrice,
+    buyScore: buy.score,
+    status: toStatus(buy.label),
+  };
+});
+
+export const categories = [
+  "All categories",
+  "Tools",
+  "Electronics",
+  "Home",
+  "Kitchen",
+];
+
+export const retailers = [
+  "All stores",
+  "Home Depot",
+  "Lowe's",
+  "Walmart",
+  "Target",
+];

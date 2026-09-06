@@ -67,7 +67,7 @@ export function DealCard({ deal }: { deal: Deal }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <Metric
           label="Clearance"
           value={`$${deal.clearancePrice.toFixed(2)}`}
@@ -87,6 +87,16 @@ export function DealCard({ deal }: { deal: Deal }) {
           label="ROI"
           value={`${deal.roi.toFixed(0)}%`}
           helper="on purchase cost"
+        />
+        <Metric
+          label="Margin"
+          value={`${deal.margin.toFixed(0)}%`}
+          helper="of resale price"
+        />
+        <Metric
+          label="Break-even"
+          value={`$${deal.breakEvenPrice.toFixed(2)}`}
+          helper="minimum sale price"
         />
       </div>
     </article>

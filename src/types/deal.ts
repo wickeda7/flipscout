@@ -12,8 +12,13 @@ export interface Deal {
   retailPrice: number;
   clearancePrice: number;
   resalePrice: number;
+  marketplaceFeePercent: number;
+  shippingCost: number;
+  otherCosts: number;
   estimatedProfit: number;
   roi: number;
+  margin: number;
+  breakEvenPrice: number;
   inventory: number;
   buyScore: number;
   status: DealStatus;
