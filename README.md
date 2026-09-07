@@ -110,3 +110,22 @@ Yarn resolves `@flipscout/types`, `@flipscout/core`,
 `@flipscout/api-client`, and `@flipscout/i18n` from the local workspaces.
 Do not run `yarn install` from inside `apps/web` or `apps/api`; run it at the
 repository root.
+
+### API environment loading
+
+The standalone API loads `apps/api/.env` via `dotenv`. After changing the file,
+restart `yarn dev:api`.
+
+You can verify the API sees the Mapbox token by opening:
+
+```text
+http://localhost:4000/health
+```
+
+The response should include:
+
+```json
+{"ok":true,"mapboxConfigured":true}
+```
+
+The token value itself is never returned.
