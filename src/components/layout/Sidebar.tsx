@@ -13,7 +13,7 @@ const nav = [
   { label: "Deals", icon: Tags, href: "/#deals" },
   { label: "Stores", icon: MapPinned, href: "/" },
   { label: "Calculator", icon: Calculator, href: "/calculator" },
-  { label: "Watchlist", icon: Heart, href: "/" },
+  { label: "Watchlist", icon: Heart, href: "/watchlist" },
 ];
 
 export function Sidebar() {

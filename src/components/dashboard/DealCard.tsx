@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock3, MapPin, Package2, Store } from "lucide-react";
 import type { Deal } from "@/types/deal";
+import { SaveDealButton } from "@/components/watchlist/SaveDealButton";
 
 function statusClasses(status: Deal["status"]) {
   switch (status) {
@@ -101,7 +102,8 @@ export function DealCard({ deal }: { deal: Deal }) {
         />
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        <SaveDealButton dealId={deal.id} compact />
         <Link
           href={`/deals/${deal.id}`}
           className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white"
