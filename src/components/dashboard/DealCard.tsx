@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Clock3, MapPin, Package2, Store } from "lucide-react";
 import type { Deal } from "@/types/deal";
 
@@ -98,6 +99,15 @@ export function DealCard({ deal }: { deal: Deal }) {
           value={`$${deal.breakEvenPrice.toFixed(2)}`}
           helper="minimum sale price"
         />
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <Link
+          href={`/deals/${deal.id}`}
+          className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white"
+        >
+          View full analysis →
+        </Link>
       </div>
     </article>
   );

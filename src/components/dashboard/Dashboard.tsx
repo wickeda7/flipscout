@@ -120,7 +120,7 @@ export function Dashboard() {
           />
         </section>
 
-        <section>
+        <section id="deals">
           <div className="mb-4 flex items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold text-white">Best deals</h2>

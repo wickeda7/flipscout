@@ -10,7 +10,7 @@ import {
 
 const nav = [
   { label: "Dashboard", icon: BarChart3, href: "/" },
-  { label: "Deals", icon: Tags, href: "/" },
+  { label: "Deals", icon: Tags, href: "/#deals" },
   { label: "Stores", icon: MapPinned, href: "/" },
   { label: "Calculator", icon: Calculator, href: "/calculator" },
   { label: "Watchlist", icon: Heart, href: "/" },

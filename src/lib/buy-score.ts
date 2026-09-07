@@ -6,9 +6,18 @@ export interface BuyScoreInput {
   distanceMiles: number;
 }
 
+export interface BuyScoreBreakdown {
+  roi: number;
+  profit: number;
+  discount: number;
+  inventory: number;
+  distance: number;
+}
+
 export interface BuyScoreResult {
   score: number;
   label: "STRONG BUY" | "BUY" | "MAYBE" | "SKIP";
+  breakdown: BuyScoreBreakdown;
 }
 
 function clamp(value: number, min = 0, max = 100) {
@@ -22,18 +31,20 @@ export function calculateBuyScore({
   inventory,
   distanceMiles,
 }: BuyScoreInput): BuyScoreResult {
-  const roiScore = clamp((roiPercent / 150) * 100);
-  const profitScore = clamp((netProfit / 60) * 100);
-  const discountScore = clamp(discountPercent);
-  const inventoryScore = clamp((inventory / 8) * 100);
-  const distanceScore = clamp(100 - distanceMiles * 4);
+  const breakdown: BuyScoreBreakdown = {
+    roi: clamp((roiPercent / 150) * 100),
+    profit: clamp((netProfit / 60) * 100),
+    discount: clamp(discountPercent),
+    inventory: clamp((inventory / 8) * 100),
+    distance: clamp(100 - distanceMiles * 4),
+  };
 
   const score = Math.round(
-    roiScore * 0.30 +
-      profitScore * 0.30 +
-      discountScore * 0.15 +
-      inventoryScore * 0.15 +
-      distanceScore * 0.10,
+    breakdown.roi * 0.30 +
+      breakdown.profit * 0.30 +
+      breakdown.discount * 0.15 +
+      breakdown.inventory * 0.15 +
+      breakdown.distance * 0.10,
   );
 
   const label =
@@ -45,5 +56,5 @@ export function calculateBuyScore({
           ? "MAYBE"
           : "SKIP";
 
-  return { score, label };
+  return { score, label, breakdown };
 }
