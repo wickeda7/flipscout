@@ -125,30 +125,30 @@ export function ProfitCalculator() {
         </div>
 
         <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.025] p-3 text-xs text-neutral-500">
-          {preset.note} Fee fields below remain editable.
+          {preset.note} {t("calculator.feeEditable")}
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <NumberField label="Retail price" value={retailPrice} onChange={setRetailPrice} />
-          <NumberField label="Purchase price" value={purchasePrice} onChange={setPurchasePrice} />
-          <NumberField label="Expected resale price" value={resalePrice} onChange={setResalePrice} />
-          <NumberField label="Marketplace fee %" value={feePercent} onChange={setFeePercent} step={0.25} />
-          <NumberField label="Flat marketplace fee" value={flatFee} onChange={setFlatFee} />
-          <NumberField label="Shipping cost" value={shipping} onChange={setShipping} />
-          <NumberField label="Other costs" value={otherCosts} onChange={setOtherCosts} />
-          <NumberField label="Units available" value={inventory} onChange={setInventory} step={1} />
-          <NumberField label="Distance (miles)" value={distanceMiles} onChange={setDistanceMiles} />
+          <NumberField label={t("calculator.retailPrice")} value={retailPrice} onChange={setRetailPrice} />
+          <NumberField label={t("calculator.purchasePrice")} value={purchasePrice} onChange={setPurchasePrice} />
+          <NumberField label={t("calculator.resalePrice")} value={resalePrice} onChange={setResalePrice} />
+          <NumberField label={t("calculator.marketplaceFee")} value={feePercent} onChange={setFeePercent} step={0.25} />
+          <NumberField label={t("calculator.flatFee")} value={flatFee} onChange={setFlatFee} />
+          <NumberField label={t("calculator.shipping")} value={shipping} onChange={setShipping} />
+          <NumberField label={t("calculator.otherCosts")} value={otherCosts} onChange={setOtherCosts} />
+          <NumberField label={t("calculator.unitsAvailable")} value={inventory} onChange={setInventory} step={1} />
+          <NumberField label={t("calculator.distanceMiles")} value={distanceMiles} onChange={setDistanceMiles} />
         </div>
 
         <div className="mt-6 border-t border-white/10 pt-6">
-          <h3 className="font-semibold text-white">Purchase targets</h3>
+          <h3 className="font-semibold text-white">{t("calculator.purchaseTargets")}</h3>
           <p className="mt-1 text-xs text-neutral-500">
-            Set the minimum return you want before buying.
+            {t("calculator.purchaseTargetsHelp")}
           </p>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <NumberField label="Minimum profit" value={targetProfit} onChange={setTargetProfit} />
-            <NumberField label="Minimum ROI %" value={targetRoi} onChange={setTargetRoi} step={5} />
+            <NumberField label={t("calculator.minimumProfit")} value={targetProfit} onChange={setTargetProfit} />
+            <NumberField label={t("calculator.minimumRoi")} value={targetRoi} onChange={setTargetRoi} step={5} />
           </div>
         </div>
       </section>
@@ -157,17 +157,17 @@ export function ProfitCalculator() {
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm text-neutral-500">BUY score</p>
+              <p className="text-sm text-neutral-500">{t("calculator.buyScore")}</p>
               <div className="mt-1 text-5xl font-bold tracking-tight text-white">
                 {result.buy.score}
               </div>
               <p className="mt-2 text-sm font-semibold text-neutral-300">
-                {result.buy.label}
+                {t(`status.${result.buy.label === "STRONG BUY" ? "strong-buy" : result.buy.label.toLowerCase()}` as any)}
               </p>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-black px-4 py-3 text-right">
-              <div className="text-xs text-neutral-500">Net profit</div>
+              <div className="text-xs text-neutral-500">{t("calculator.netProfit")}</div>
               <div className="mt-1 text-2xl font-semibold text-white">
                 {currency(result.profit.netProfit)}
               </div>
@@ -176,17 +176,17 @@ export function ProfitCalculator() {
 
           <div className="mt-6 grid grid-cols-2 gap-3">
             <Metric label="ROI" value={`${result.profit.roiPercent.toFixed(1)}%`} />
-            <Metric label="Margin" value={`${result.profit.marginPercent.toFixed(1)}%`} />
-            <Metric label="Marketplace fees" value={currency(result.profit.marketplaceFees)} />
-            <Metric label="Break-even price" value={currency(result.profit.breakEvenPrice)} />
-            <Metric label="Discount" value={`${result.discountPercent.toFixed(1)}%`} />
-            <Metric label="Total costs" value={currency(result.profit.totalCosts)} />
+            <Metric label={t("calculator.margin")} value={`${result.profit.marginPercent.toFixed(1)}%`} />
+            <Metric label={t("calculator.marketplaceFees")} value={currency(result.profit.marketplaceFees)} />
+            <Metric label={t("calculator.breakEven")} value={currency(result.profit.breakEvenPrice)} />
+            <Metric label={t("calculator.discount")} value={`${result.discountPercent.toFixed(1)}%`} />
+            <Metric label={t("calculator.totalCosts")} value={currency(result.profit.totalCosts)} />
           </div>
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-neutral-950 p-5">
           <p className="text-sm text-neutral-500">
-            Recommended maximum purchase price
+            {t("calculator.maxPurchase")}
           </p>
 
           <div className="mt-2 text-4xl font-bold tracking-tight text-white">
@@ -194,17 +194,17 @@ export function ProfitCalculator() {
           </div>
 
           <p className="mt-3 text-sm text-neutral-400">
-            Based on at least {currency(targetProfit)} profit and{" "}
-            {targetRoi.toFixed(0)}% ROI.
+            {t("calculator.basedOn")} {currency(targetProfit)} {t("calculator.profitAnd")}{" "}
+            {targetRoi.toFixed(0)}% {t("calculator.roi")}
           </p>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             <Metric
-              label="Profit-limit price"
+              label={t("calculator.profitLimit")}
               value={currency(result.maximumPurchase.byProfitTarget)}
             />
             <Metric
-              label="ROI-limit price"
+              label={t("calculator.roiLimit")}
               value={currency(result.maximumPurchase.byRoiTarget)}
             />
           </div>
@@ -218,8 +218,8 @@ export function ProfitCalculator() {
             ].join(" ")}
           >
             {purchaseDelta >= 0
-              ? `Current price is ${currency(Math.abs(purchaseDelta))} below your maximum.`
-              : `Current price is ${currency(Math.abs(purchaseDelta))} above your target maximum.`}
+              ? t("calculator.currentBelow", { amount: currency(Math.abs(purchaseDelta)) })
+              : t("calculator.currentAbove", { amount: currency(Math.abs(purchaseDelta)) })}
           </div>
         </section>
       </div>
