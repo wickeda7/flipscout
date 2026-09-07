@@ -129,3 +129,33 @@ The response should include:
 ```
 
 The token value itself is never returned.
+
+## Phase 3 data provider
+
+The shared API now owns a `DealProvider` abstraction. Web and future mobile clients
+continue using the same `/v1/deals` API regardless of where deal data comes from.
+
+Local demo mode:
+
+```env
+DATA_PROVIDER=mock
+```
+
+PostgreSQL mode:
+
+```env
+DATA_PROVIDER=postgres
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/flipscout
+DATABASE_POOL_MAX=10
+DATABASE_SSL=false
+```
+
+Run `database/schema.sql` against the PostgreSQL database before selecting the
+PostgreSQL provider. Restart the API after changing provider settings.
+
+`GET /health` reports `dataProvider`, provider health, and whether Mapbox is
+configured without exposing credentials.
+
+Distance is intentionally not persisted as a deal attribute in PostgreSQL yet:
+store distance is user/origin-relative. The current PostgreSQL provider returns
+0 miles until Phase 3 adds user-origin/geospatial distance calculation.

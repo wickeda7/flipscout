@@ -2,7 +2,7 @@ import "dotenv/config";
 import { createServer } from "node:http";
 import { URL } from "node:url";
 import type { OptimizeRouteRequest } from "@flipscout/types";
-import { mockDeals } from "./mock-deals.js";
+import { createDealProvider } from "./providers/index.js";
 import {
   optimizeWithMapbox,
   RouteError,
@@ -10,6 +10,7 @@ import {
 
 const PORT = Number(process.env.PORT ?? 4000);
 const WEB_ORIGIN = process.env.WEB_ORIGIN ?? "http://localhost:3000";
+const { name: dataProviderName, provider: dealProvider } = createDealProvider();
 
 function writeJson(
   response: import("node:http").ServerResponse,
@@ -50,40 +51,38 @@ const server = createServer(async (request, response) => {
     const url = new URL(request.url, `http://${request.headers.host}`);
 
     if (request.method === "GET" && url.pathname === "/health") {
-      writeJson(response, 200, {
+      let dataProviderHealth = { ok: true, detail: dataProviderName };
+      try {
+        dataProviderHealth =
+          (await dealProvider.health?.()) ?? dataProviderHealth;
+      } catch (error) {
+        dataProviderHealth = {
+          ok: false,
+          detail: error instanceof Error ? error.message : "provider error",
+        };
+      }
+
+      writeJson(response, dataProviderHealth.ok ? 200 : 503, {
         service: "flipscout-api",
-        status: "ok",
+        status: dataProviderHealth.ok ? "ok" : "degraded",
+        dataProvider: dataProviderName,
+        dataProviderHealth,
+        mapboxConfigured: Boolean(process.env.MAPBOX_ACCESS_TOKEN),
       });
       return;
     }
 
     if (request.method === "GET" && url.pathname === "/v1/deals") {
-      const q = url.searchParams.get("q")?.trim().toLowerCase() ?? "";
-      const retailer = url.searchParams.get("retailer");
-      const category = url.searchParams.get("category");
+      const q = url.searchParams.get("q")?.trim() || undefined;
+      const retailer = url.searchParams.get("retailer") || undefined;
+      const category = url.searchParams.get("category") || undefined;
 
-      const deals = mockDeals.filter((deal) => {
-        const matchesQuery =
-          !q ||
-          [
-            deal.productName,
-            deal.brand,
-            deal.retailer,
-            deal.storeName,
-            deal.city,
-            deal.state,
-            deal.category,
-          ].some((value) => value.toLowerCase().includes(q));
-
-        const matchesRetailer =
-          !retailer || retailer === "All stores" || deal.retailer === retailer;
-
-        const matchesCategory =
-          !category ||
-          category === "All categories" ||
-          deal.category === category;
-
-        return matchesQuery && matchesRetailer && matchesCategory;
+      const deals = await dealProvider.listDeals({
+        q,
+        retailer:
+          retailer && retailer !== "All stores" ? retailer : undefined,
+        category:
+          category && category !== "All categories" ? category : undefined,
       });
 
       writeJson(response, 200, deals);
@@ -93,7 +92,7 @@ const server = createServer(async (request, response) => {
     const dealMatch = url.pathname.match(/^\/v1\/deals\/([^/]+)$/);
     if (request.method === "GET" && dealMatch) {
       const id = decodeURIComponent(dealMatch[1]);
-      const deal = mockDeals.find((item) => item.id === id);
+      const deal = await dealProvider.getDeal(id);
 
       if (!deal) {
         writeJson(response, 404, { error: "Deal not found." });
@@ -138,4 +137,5 @@ const server = createServer(async (request, response) => {
 
 server.listen(PORT, () => {
   console.log(`FlipScout API listening on http://localhost:${PORT}`);
+  console.log(`FlipScout data provider: ${dataProviderName}`);
 });
