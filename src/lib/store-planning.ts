@@ -7,6 +7,8 @@ export interface StoreOpportunity {
   city: string;
   state: string;
   distanceMiles: number;
+  latitude: number;
+  longitude: number;
   dealCount: number;
   unitCount: number;
   totalPotentialProfit: number;
@@ -54,6 +56,8 @@ export function groupDealsByStore(deals: Deal[]): StoreOpportunity[] {
         city: first.city,
         state: first.state,
         distanceMiles,
+        latitude: first.latitude,
+        longitude: first.longitude,
         dealCount: storeDeals.length,
         unitCount,
         totalPotentialProfit,

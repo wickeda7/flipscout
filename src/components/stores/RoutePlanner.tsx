@@ -1,8 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Fuel, Route, WalletCards } from "lucide-react";
+import {
+  Check,
+  Fuel,
+  Loader2,
+  MapPinned,
+  Navigation,
+  Route,
+  Timer,
+  WalletCards,
+} from "lucide-react";
 import type { StoreOpportunity } from "@/lib/store-planning";
+import { RouteMap } from "@/components/stores/RouteMap";
 import { optimizeRoute } from "@/lib/route-optimizer";
 
 function currency(value: number) {
@@ -13,28 +23,86 @@ function currency(value: number) {
   }).format(value);
 }
 
+const DEFAULT_ORIGIN = {
+  latitude: 28.7589,
+  longitude: -81.3178,
+};
+
+interface LiveRouteResult {
+  provider: "mapbox";
+  orderedStoreKeys: string[];
+  distanceMiles: number;
+  durationMinutes: number;
+  legs: Array<{
+    index: number;
+    distanceMiles: number;
+    durationMinutes: number;
+  }>;
+  geometry: [number, number][];
+}
+
 export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
   const [selectedKeys, setSelectedKeys] = useState<string[]>(
     stores.slice(0, Math.min(3, stores.length)).map((store) => store.key),
   );
   const [mpg, setMpg] = useState(25);
   const [gasPrice, setGasPrice] = useState(3.5);
-  const [detourMiles, setDetourMiles] = useState(3);
+  const [roadMultiplier, setRoadMultiplier] = useState(1.2);
+  const [originLatitude, setOriginLatitude] = useState(
+    DEFAULT_ORIGIN.latitude,
+  );
+  const [originLongitude, setOriginLongitude] = useState(
+    DEFAULT_ORIGIN.longitude,
+  );
+  const [liveRoute, setLiveRoute] = useState<LiveRouteResult | null>(null);
+  const [liveError, setLiveError] = useState("");
+  const [loadingLiveRoute, setLoadingLiveRoute] = useState(false);
 
   const selectedStores = useMemo(
     () => stores.filter((store) => selectedKeys.includes(store.key)),
     [stores, selectedKeys],
   );
 
-  const plan = useMemo(
+  const fallbackPlan = useMemo(
     () =>
       optimizeRoute(selectedStores, {
         mpg,
         gasPricePerGallon: gasPrice,
-        detourMilesPerExtraStop: detourMiles,
+        roadDistanceMultiplier: roadMultiplier,
+        origin: {
+          latitude: originLatitude,
+          longitude: originLongitude,
+        },
       }),
-    [selectedStores, mpg, gasPrice, detourMiles],
+    [
+      selectedStores,
+      mpg,
+      gasPrice,
+      roadMultiplier,
+      originLatitude,
+      originLongitude,
+    ],
   );
+
+  const orderedStores = useMemo(() => {
+    if (!liveRoute) return fallbackPlan.orderedStops;
+
+    const lookup = new Map(stores.map((store) => [store.key, store]));
+    return liveRoute.orderedStoreKeys
+      .map((key) => lookup.get(key))
+      .filter((store): store is StoreOpportunity => Boolean(store));
+  }, [fallbackPlan.orderedStops, liveRoute, stores]);
+
+  const effectiveMiles = liveRoute?.distanceMiles ?? fallbackPlan.estimatedMiles;
+  const effectiveFuelCost =
+    mpg > 0 ? (effectiveMiles / mpg) * Math.max(0, gasPrice) : 0;
+  const grossPotentialProfit = selectedStores.reduce(
+    (sum, store) => sum + store.totalPotentialProfit,
+    0,
+  );
+  const netTripProfit = grossPotentialProfit - effectiveFuelCost;
+  const profitPerTripMile =
+    effectiveMiles > 0 ? netTripProfit / effectiveMiles : 0;
 
   function toggleStore(key: string) {
     setSelectedKeys((current) =>
@@ -42,26 +110,72 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
         ? current.filter((item) => item !== key)
         : [...current, key],
     );
+    setLiveRoute(null);
+    setLiveError("");
+  }
+
+  async function requestLiveRoute() {
+    if (selectedStores.length === 0) return;
+
+    setLoadingLiveRoute(true);
+    setLiveError("");
+
+    try {
+      const response = await fetch("/api/routes/optimize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          origin: {
+            latitude: originLatitude,
+            longitude: originLongitude,
+          },
+          stores: selectedStores.map((store) => ({
+            key: store.key,
+            storeName: store.storeName,
+            latitude: store.latitude,
+            longitude: store.longitude,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Live routing failed.");
+      }
+
+      setLiveRoute(data as LiveRouteResult);
+    } catch (error) {
+      setLiveRoute(null);
+      setLiveError(
+        error instanceof Error
+          ? error.message
+          : "Unable to calculate a live route.",
+      );
+    } finally {
+      setLoadingLiveRoute(false);
+    }
   }
 
   return (
     <section className="mb-6 rounded-2xl border border-white/10 bg-white/[0.025] p-5">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+      <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-start">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Route optimizer
+            Live route optimizer
           </p>
           <h2 className="mt-2 text-xl font-semibold text-white">
             Build today&apos;s buying trip
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
-            Select stores and adjust your vehicle assumptions. FlipScout
-            estimates driving cost and net trip profit from the opportunities
-            you choose.
+            Use live Mapbox road routing when configured, or continue with the
+            built-in coordinate fallback automatically.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[520px]">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:min-w-[610px]">
           <NumberField label="MPG" value={mpg} onChange={setMpg} step={1} />
           <NumberField
             label="Gas / gal"
@@ -69,18 +183,73 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
             onChange={setGasPrice}
           />
           <NumberField
-            label="Detour / stop"
-            value={detourMiles}
-            onChange={setDetourMiles}
+            label="Fallback multiplier"
+            value={roadMultiplier}
+            onChange={(value) => {
+              setRoadMultiplier(value);
+              setLiveRoute(null);
+            }}
+            step={0.05}
+          />
+          <NumberField
+            label="Start latitude"
+            value={originLatitude}
+            onChange={(value) => {
+              setOriginLatitude(value);
+              setLiveRoute(null);
+            }}
+            step={0.0001}
+          />
+          <NumberField
+            label="Start longitude"
+            value={originLongitude}
+            onChange={(value) => {
+              setOriginLongitude(value);
+              setLiveRoute(null);
+            }}
+            step={0.0001}
           />
           <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-            <div className="text-xs text-neutral-500">Selected</div>
+            <div className="text-xs text-neutral-500">Selected stores</div>
             <div className="mt-2 text-xl font-semibold text-white">
               {selectedStores.length}
             </div>
           </div>
         </div>
       </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={requestLiveRoute}
+          disabled={loadingLiveRoute || selectedStores.length === 0}
+          className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loadingLiveRoute ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Navigation size={16} />
+          )}
+          {loadingLiveRoute ? "Calculating..." : "Use live road routing"}
+        </button>
+
+        <span
+          className={[
+            "rounded-lg border px-3 py-2 text-xs",
+            liveRoute
+              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+              : "border-white/10 bg-black/20 text-neutral-500",
+          ].join(" ")}
+        >
+          {liveRoute ? "Mapbox live route active" : "Local fallback active"}
+        </span>
+      </div>
+
+      {liveError && (
+        <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-200">
+          {liveError}
+        </div>
+      )}
 
       <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {stores.map((store) => {
@@ -104,8 +273,10 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
                     {store.storeName}
                   </div>
                   <div className="mt-1 text-xs text-neutral-500">
-                    {store.distanceMiles.toFixed(1)} mi ·{" "}
-                    {currency(store.totalPotentialProfit)} potential
+                    {store.city} · {currency(store.totalPotentialProfit)} potential
+                  </div>
+                  <div className="mt-1 text-[11px] text-neutral-700">
+                    {store.latitude.toFixed(4)}, {store.longitude.toFixed(4)}
                   </div>
                 </div>
 
@@ -125,64 +296,115 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
         })}
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <Metric
           icon={Route}
-          label="Est. trip miles"
-          value={`${plan.estimatedMiles.toFixed(1)} mi`}
+          label={liveRoute ? "Road miles" : "Est. road miles"}
+          value={`${effectiveMiles.toFixed(1)} mi`}
+        />
+        <Metric
+          icon={Timer}
+          label="Drive time"
+          value={
+            liveRoute
+              ? `${Math.round(liveRoute.durationMinutes)} min`
+              : "Fallback"
+          }
         />
         <Metric
           icon={Fuel}
           label="Fuel cost"
-          value={currency(plan.estimatedFuelCost)}
+          value={currency(effectiveFuelCost)}
         />
         <Metric
           icon={WalletCards}
           label="Gross profit"
-          value={currency(plan.grossPotentialProfit)}
+          value={currency(grossPotentialProfit)}
         />
         <Metric
           icon={WalletCards}
           label="Net trip profit"
-          value={currency(plan.netTripProfit)}
+          value={currency(netTripProfit)}
         />
         <Metric
           icon={Route}
           label="Profit / mile"
-          value={currency(plan.profitPerTripMile)}
+          value={currency(profitPerTripMile)}
         />
       </div>
 
-      <div className="mt-6 rounded-xl border border-white/10 bg-black/30 p-4">
-        <div className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-          Suggested visit order
-        </div>
+      <div className="mt-6 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+        <RouteMap
+          stores={orderedStores}
+          origin={{
+            latitude: originLatitude,
+            longitude: originLongitude,
+          }}
+          geometry={liveRoute?.geometry}
+        />
 
-        {plan.orderedStops.length > 0 ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {plan.orderedStops.map((store, index) => (
-              <div key={store.key} className="flex items-center gap-2">
-                <span className="rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-neutral-300">
-                  {index + 1}. {store.storeName}
-                </span>
-                {index < plan.orderedStops.length - 1 && (
-                  <span className="text-neutral-700">→</span>
-                )}
-              </div>
-            ))}
+        <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <MapPinned size={14} />
+            Suggested visit order
           </div>
-        ) : (
-          <p className="mt-3 text-sm text-neutral-600">
-            Select at least one store to create a route.
-          </p>
-        )}
 
-        <p className="mt-4 text-xs leading-5 text-neutral-600">
-          MVP estimate: stores are ordered nearest-to-farthest. Trip mileage is
-          twice the farthest store distance plus the detour allowance for each
-          additional stop. Exact road routing requires store coordinates and a
-          maps routing provider.
-        </p>
+          {orderedStores.length > 0 ? (
+            <div className="mt-4 space-y-2">
+              {orderedStores.map((store, index) => {
+                const liveLeg = liveRoute?.legs[index];
+                const fallbackLeg = fallbackPlan.legs[index];
+
+                return (
+                  <div
+                    key={store.key}
+                    className="rounded-xl border border-white/5 bg-black/40 p-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-medium text-white">
+                          {index + 1}. {store.storeName}
+                        </div>
+                        <div className="mt-1 text-xs text-neutral-600">
+                          BUY score {store.averageBuyScore.toFixed(0)}
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-neutral-300">
+                          {(
+                            liveLeg?.distanceMiles ??
+                            fallbackLeg?.estimatedRoadMiles ??
+                            0
+                          ).toFixed(1)}{" "}
+                          mi
+                        </div>
+                        {liveLeg && (
+                          <div className="mt-1 text-xs text-neutral-600">
+                            {Math.round(liveLeg.durationMinutes)} min
+                          </div>
+                        )}
+                        <div className="mt-1 text-xs text-emerald-300">
+                          {currency(store.totalPotentialProfit)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-neutral-600">
+              Select at least one store to create a route.
+            </p>
+          )}
+
+          <p className="mt-5 text-xs leading-5 text-neutral-600">
+            Live routing uses the server-side provider token and keeps it out of
+            the browser. If live routing is unavailable, FlipScout immediately
+            falls back to its local Haversine route estimate.
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -204,7 +426,6 @@ function NumberField({
       <span className="block text-xs text-neutral-500">{label}</span>
       <input
         type="number"
-        min="0"
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}

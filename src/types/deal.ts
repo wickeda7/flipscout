@@ -9,6 +9,8 @@ export interface Deal {
   city: string;
   state: string;
   distanceMiles: number;
+  latitude: number;
+  longitude: number;
   retailPrice: number;
   clearancePrice: number;
   resalePrice: number;

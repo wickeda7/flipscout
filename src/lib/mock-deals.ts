@@ -11,6 +11,8 @@ interface RawDeal {
   city: string;
   state: string;
   distanceMiles: number;
+  latitude: number;
+  longitude: number;
   retailPrice: number;
   clearancePrice: number;
   resalePrice: number;
@@ -32,6 +34,8 @@ const rawDeals: RawDeal[] = [
     city: "Lake Mary",
     state: "FL",
     distanceMiles: 5.8,
+    latitude: 28.7855,
+    longitude: -81.3572,
     retailPrice: 179,
     clearancePrice: 49,
     resalePrice: 119,
@@ -51,6 +55,8 @@ const rawDeals: RawDeal[] = [
     city: "Sanford",
     state: "FL",
     distanceMiles: 9.2,
+    latitude: 28.8037,
+    longitude: -81.2738,
     retailPrice: 149,
     clearancePrice: 39,
     resalePrice: 94,
@@ -70,6 +76,8 @@ const rawDeals: RawDeal[] = [
     city: "Sanford",
     state: "FL",
     distanceMiles: 7.4,
+    latitude: 28.7978,
+    longitude: -81.2926,
     retailPrice: 249,
     clearancePrice: 119,
     resalePrice: 199,
@@ -89,6 +97,8 @@ const rawDeals: RawDeal[] = [
     city: "Lake Mary",
     state: "FL",
     distanceMiles: 3.6,
+    latitude: 28.7581,
+    longitude: -81.3377,
     retailPrice: 299,
     clearancePrice: 104.99,
     resalePrice: 184,
@@ -108,6 +118,8 @@ const rawDeals: RawDeal[] = [
     city: "Altamonte Springs",
     state: "FL",
     distanceMiles: 12.1,
+    latitude: 28.6694,
+    longitude: -81.3890,
     retailPrice: 159,
     clearancePrice: 35,
     resalePrice: 98,
@@ -127,6 +139,8 @@ const rawDeals: RawDeal[] = [
     city: "Casselberry",
     state: "FL",
     distanceMiles: 14.7,
+    latitude: 28.6647,
+    longitude: -81.3215,
     retailPrice: 129,
     clearancePrice: 49,
     resalePrice: 79,
