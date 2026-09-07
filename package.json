@@ -1,35 +1,19 @@
 {
-  "name": "clearance-dashboard-phase1",
+  "name": "flipscout",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "verify:css": "node verify-css-setup.mjs",
-    "verify:tailwind": "node verify-tailwind.mjs"
-  },
-  "dependencies": {
-    "lucide-react": "^0.468.0",
-    "mapbox-gl": "3.30.0",
-    "next": "16.3.4",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.0",
-    "@types/node": "^22.10.0",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "eslint": "^9.0.0",
-    "eslint-config-next": "16.3.4",
-    "postcss": "^8.5.0",
-    "tailwindcss": "^4.1.0",
-    "typescript": "^5.7.2"
+    "dev:web": "npm run dev -w @flipscout/web",
+    "dev:api": "npm run dev -w @flipscout/api",
+    "build:web": "npm run build -w @flipscout/web",
+    "typecheck:api": "npm run typecheck -w @flipscout/api"
   },
   "engines": {
     "node": ">=20.9.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22"
 }
