@@ -1,6 +1,7 @@
 import { Route, Store, WalletCards } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StoreOpportunityCard } from "@/components/stores/StoreOpportunityCard";
+import { RoutePlanner } from "@/components/stores/RoutePlanner";
 import { mockDeals } from "@/lib/mock-deals";
 import { groupDealsByStore } from "@/lib/store-planning";
 
@@ -63,6 +64,8 @@ export default function StoresPage() {
               }
             />
           </section>
+
+          <RoutePlanner stores={stores} />
 
           <section className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
             <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
