@@ -21,6 +21,21 @@ function currency(value: number) {
 
 export function ProfitCalculator() {
   const { t } = useI18n();
+
+  const scoreStatusLabel = (label: string) => {
+    switch (label) {
+      case "STRONG BUY":
+        return t("status.strong-buy");
+      case "BUY":
+        return t("status.buy");
+      case "MAYBE":
+        return t("status.maybe");
+      case "SKIP":
+        return t("status.skip");
+      default:
+        return label;
+    }
+  };
   const [marketplace, setMarketplace] = useState("ebay");
   const [purchasePrice, setPurchasePrice] = useState(35);
   const [retailPrice, setRetailPrice] = useState(159);
@@ -162,7 +177,7 @@ export function ProfitCalculator() {
                 {result.buy.score}
               </div>
               <p className="mt-2 text-sm font-semibold text-neutral-300">
-                {t(`status.${result.buy.label === "STRONG BUY" ? "strong-buy" : result.buy.label.toLowerCase()}` as any)}
+                {scoreStatusLabel(result.buy.label)}
               </p>
             </div>
 
