@@ -6,9 +6,11 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { DealCard } from "@/components/dashboard/DealCard";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { useDeals } from "@/hooks/use-deals";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export default function WatchlistPage() {
   const { savedIds, clear } = useWatchlist();
+  const { t } = useI18n();
   const { deals, loading, error } = useDeals();
 
   const savedDeals = deals.filter((deal) => savedIds.includes(deal.id));
@@ -26,12 +28,12 @@ export default function WatchlistPage() {
         <div className="mx-auto max-w-7xl">
           <header className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
-              <p className="text-sm text-neutral-500">Saved opportunities</p>
+              <p className="text-sm text-neutral-500">{t("watchlist.context")}</p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
                 Watchlist
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-neutral-400">
-                Keep the deals you want to revisit before making a buying trip.
+                {t("watchlist.subtitle")}
               </p>
             </div>
 
@@ -42,7 +44,7 @@ export default function WatchlistPage() {
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm text-neutral-400 transition hover:bg-white/5 hover:text-white"
               >
                 <Trash2 size={16} />
-                Clear watchlist
+                {t("watchlist.clear")}
               </button>
             )}
           </header>
@@ -55,25 +57,25 @@ export default function WatchlistPage() {
 
           {loading ? (
             <section className="rounded-2xl border border-white/10 p-10 text-center text-sm text-neutral-500">
-              Loading saved opportunities…
+              {t("watchlist.loading")}
             </section>
           ) : savedDeals.length > 0 ? (
             <>
               <section className="mb-6 grid gap-3 sm:grid-cols-3">
                 <Summary
-                  label="Saved deals"
+                  label={t("watchlist.savedDeals")}
                   value={String(savedDeals.length)}
-                  helper="opportunities being tracked"
+                  helper={t("watchlist.trackedHelper")}
                 />
                 <Summary
-                  label="Potential profit"
+                  label={t("watchlist.potentialProfit")}
                   value={`$${totalProfit.toFixed(0)}`}
-                  helper="expected profit across saved deals"
+                  helper={t("watchlist.profitHelper")}
                 />
                 <Summary
-                  label="Units available"
+                  label={t("watchlist.unitsAvailable")}
                   value={String(units)}
-                  helper="reported local inventory"
+                  helper={t("watchlist.unitsHelper")}
                 />
               </section>
 
@@ -89,17 +91,16 @@ export default function WatchlistPage() {
                 <Heart size={22} />
               </div>
               <h2 className="mt-5 text-xl font-semibold text-white">
-                No saved deals yet
+                {t("watchlist.emptyTitle")}
               </h2>
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-500">
-                Save promising clearance opportunities from the dashboard or
-                deal analysis page and they will appear here.
+                {t("watchlist.emptyBody")}
               </p>
               <Link
                 href="/#deals"
                 className="mt-6 inline-flex rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-neutral-200"
               >
-                Browse deals
+                {t("watchlist.browse")}
               </Link>
             </section>
           )}

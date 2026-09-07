@@ -1,11 +1,12 @@
-export const dynamic = "force-dynamic";
+"use client";
 
 import { Route, Store, WalletCards } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StoreOpportunityCard } from "@/components/stores/StoreOpportunityCard";
 import { RoutePlanner } from "@/components/stores/RoutePlanner";
-import { flipScoutApi } from "@/lib/api";
 import { groupDealsByStore } from "@/lib/store-planning";
+import { useDeals } from "@/hooks/use-deals";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 function currency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -15,8 +16,9 @@ function currency(value: number) {
   }).format(value);
 }
 
-export default async function StoresPage() {
-  const deals = await flipScoutApi.listDeals();
+export default function StoresPage() {
+  const { deals, loading, error } = useDeals();
+  const { t } = useI18n();
   const stores = groupDealsByStore(deals);
 
   const totalPotentialProfit = stores.reduce(
@@ -33,81 +35,92 @@ export default async function StoresPage() {
       <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <header className="mb-8">
-            <p className="text-sm text-neutral-500">Trip planning</p>
+            <p className="text-sm text-neutral-500">{t("stores.context")}</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Stores worth driving to
+              {t("stores.title")}
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400">
-              FlipScout ranks nearby stores by potential resale profit per mile,
-              helping you prioritize the most valuable stops first.
+              {t("stores.subtitle")}
             </p>
           </header>
 
-          <section className="mb-6 grid gap-3 md:grid-cols-3">
-            <Summary
-              icon={Store}
-              label="Stores"
-              value={String(stores.length)}
-              helper="locations with active opportunities"
-            />
-            <Summary
-              icon={WalletCards}
-              label="Potential profit"
-              value={currency(totalPotentialProfit)}
-              helper="inventory-adjusted opportunity"
-            />
-            <Summary
-              icon={Route}
-              label="Best first stop"
-              value={bestStop?.storeName ?? "—"}
-              helper={
-                bestStop
-                  ? `${currency(bestStop.profitPerMile)} potential profit per mile`
-                  : "No opportunities available"
-              }
-            />
-          </section>
-
-          <RoutePlanner stores={stores} />
-
-          <section className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
-            <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-                  Suggested route strategy
-                </p>
-                <h2 className="mt-2 text-xl font-semibold text-white">
-                  Start with the highest-value stops
-                </h2>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
-                  The MVP ranking uses potential profit divided by one-way
-                  distance. It does not yet calculate actual multi-stop road
-                  distance, traffic, fuel cost, or store-to-store routing.
-                </p>
-              </div>
-
-              {bestStop && (
-                <div className="shrink-0 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
-                  <div className="text-xs text-emerald-300/70">
-                    Recommended first stop
-                  </div>
-                  <div className="mt-1 font-semibold text-emerald-100">
-                    {bestStop.storeName}
-                  </div>
-                </div>
-              )}
+          {error && (
+            <div className="mb-6 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-200">
+              {error}
             </div>
-          </section>
+          )}
 
-          <section className="space-y-4">
-            {stores.map((store, index) => (
-              <StoreOpportunityCard
-                key={store.key}
-                store={store}
-                rank={index + 1}
-              />
-            ))}
-          </section>
+          {loading ? (
+            <div className="rounded-2xl border border-white/10 p-10 text-center text-sm text-neutral-500">
+              {t("dashboard.scanning")}
+            </div>
+          ) : (
+            <>
+              <section className="mb-6 grid gap-3 md:grid-cols-3">
+                <Summary
+                  icon={Store}
+                  label={t("nav.stores")}
+                  value={String(stores.length)}
+                  helper={t("stores.locationsHelper")}
+                />
+                <Summary
+                  icon={WalletCards}
+                  label={t("dashboard.potentialProfit")}
+                  value={currency(totalPotentialProfit)}
+                  helper={t("stores.potentialHelper")}
+                />
+                <Summary
+                  icon={Route}
+                  label={t("stores.bestFirstStop")}
+                  value={bestStop?.storeName ?? "—"}
+                  helper={
+                    bestStop
+                      ? `${currency(bestStop.profitPerMile)} ${t("stores.profitPerMileHelper")}`
+                      : t("stores.noOpportunities")
+                  }
+                />
+              </section>
+
+              <RoutePlanner stores={stores} />
+
+              <section className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
+                <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                      {t("stores.strategyContext")}
+                    </p>
+                    <h2 className="mt-2 text-xl font-semibold text-white">
+                      {t("stores.strategyTitle")}
+                    </h2>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
+                      {t("stores.strategyDescription")}
+                    </p>
+                  </div>
+
+                  {bestStop && (
+                    <div className="shrink-0 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+                      <div className="text-xs text-emerald-300/70">
+                        {t("stores.recommendedFirstStop")}
+                      </div>
+                      <div className="mt-1 font-semibold text-emerald-100">
+                        {bestStop.storeName}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                {stores.map((store, index) => (
+                  <StoreOpportunityCard
+                    key={store.key}
+                    store={store}
+                    rank={index + 1}
+                  />
+                ))}
+              </section>
+            </>
+          )}
         </div>
       </main>
     </div>

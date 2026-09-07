@@ -18,7 +18,7 @@ import {
 interface I18nContextValue {
   locale: SupportedLocale;
   setLocale: (locale: SupportedLocale) => void;
-  t: (key: TranslationKey) => string;
+  t: (key: TranslationKey, values?: Record<string, string | number>) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -52,7 +52,7 @@ export function I18nProvider({
     () => ({
       locale,
       setLocale,
-      t: (key: TranslationKey) => translate(locale, key),
+      t: (key: TranslationKey, values?: Record<string, string | number>) => translate(locale, key, values),
     }),
     [locale],
   );

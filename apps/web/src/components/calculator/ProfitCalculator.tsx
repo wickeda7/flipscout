@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   calculateMaximumPurchasePrice,
   calculateProfit,
@@ -19,6 +20,7 @@ function currency(value: number) {
 }
 
 export function ProfitCalculator() {
+  const { t } = useI18n();
   const [marketplace, setMarketplace] = useState("ebay");
   const [purchasePrice, setPurchasePrice] = useState(35);
   const [retailPrice, setRetailPrice] = useState(159);
@@ -98,9 +100,9 @@ export function ProfitCalculator() {
       <section className="rounded-2xl border border-white/10 bg-neutral-950 p-5">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div>
-            <h2 className="text-xl font-semibold text-white">Profit calculator</h2>
+            <h2 className="text-xl font-semibold text-white">{t("calculator.profitTitle")}</h2>
             <p className="mt-1 text-sm text-neutral-500">
-              Estimate profit before buying inventory.
+              {t("calculator.profitSubtitle")}
             </p>
           </div>
 

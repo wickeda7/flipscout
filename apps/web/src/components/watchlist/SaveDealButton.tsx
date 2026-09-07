@@ -2,6 +2,7 @@
 
 import { Heart } from "lucide-react";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export function SaveDealButton({
   dealId,
@@ -11,6 +12,7 @@ export function SaveDealButton({
   compact?: boolean;
 }) {
   const { isSaved, toggle } = useWatchlist();
+  const { t } = useI18n();
   const saved = isSaved(dealId);
 
   return (
@@ -18,7 +20,7 @@ export function SaveDealButton({
       type="button"
       onClick={() => toggle(dealId)}
       aria-pressed={saved}
-      aria-label={saved ? "Remove from watchlist" : "Save to watchlist"}
+      aria-label={saved ? t("watchlist.removeAria") : t("watchlist.saveAria")}
       className={[
         "inline-flex items-center justify-center gap-2 rounded-lg border text-xs font-medium transition",
         compact ? "px-3 py-2" : "px-4 py-3",
@@ -28,7 +30,7 @@ export function SaveDealButton({
       ].join(" ")}
     >
       <Heart size={15} fill={saved ? "currentColor" : "none"} />
-      {saved ? "Saved" : "Watchlist"}
+      {saved ? t("watchlist.saved") : t("watchlist.save")}
     </button>
   );
 }

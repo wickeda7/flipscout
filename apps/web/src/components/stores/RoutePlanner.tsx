@@ -15,6 +15,7 @@ import type { StoreOpportunity } from "@/lib/store-planning";
 import { RouteMap } from "@/components/stores/RouteMap";
 import { optimizeRoute } from "@/lib/route-optimizer";
 import { flipScoutApi } from "@/lib/api";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 function currency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -43,6 +44,7 @@ interface LiveRouteResult {
 }
 
 export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
+  const { t } = useI18n();
   const [selectedKeys, setSelectedKeys] = useState<string[]>(
     stores.slice(0, Math.min(3, stores.length)).map((store) => store.key),
   );
@@ -141,7 +143,7 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
       setLiveError(
         error instanceof Error
           ? error.message
-          : "Unable to calculate a live route.",
+          : t("route.unable"),
       );
     } finally {
       setLoadingLiveRoute(false);
@@ -153,26 +155,25 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
       <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-start">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Live route optimizer
+            {t("route.context")}
           </p>
           <h2 className="mt-2 text-xl font-semibold text-white">
-            Build today&apos;s buying trip
+            {t("route.title")}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
-            Use live Mapbox road routing when configured, or continue with the
-            built-in coordinate fallback automatically.
+            {t("route.subtitle")}
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:min-w-[610px]">
           <NumberField label="MPG" value={mpg} onChange={setMpg} step={1} />
           <NumberField
-            label="Gas / gal"
+            label={t("route.gasPerGallon")}
             value={gasPrice}
             onChange={setGasPrice}
           />
           <NumberField
-            label="Fallback multiplier"
+            label={t("route.fallbackMultiplier")}
             value={roadMultiplier}
             onChange={(value) => {
               setRoadMultiplier(value);
@@ -181,7 +182,7 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
             step={0.05}
           />
           <NumberField
-            label="Start latitude"
+            label={t("route.startLatitude")}
             value={originLatitude}
             onChange={(value) => {
               setOriginLatitude(value);
@@ -190,7 +191,7 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
             step={0.0001}
           />
           <NumberField
-            label="Start longitude"
+            label={t("route.startLongitude")}
             value={originLongitude}
             onChange={(value) => {
               setOriginLongitude(value);
@@ -199,7 +200,7 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
             step={0.0001}
           />
           <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-            <div className="text-xs text-neutral-500">Selected stores</div>
+            <div className="text-xs text-neutral-500">{t("route.selectedStores")}</div>
             <div className="mt-2 text-xl font-semibold text-white">
               {selectedStores.length}
             </div>
@@ -219,7 +220,7 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
           ) : (
             <Navigation size={16} />
           )}
-          {loadingLiveRoute ? "Calculating..." : "Use live road routing"}
+          {loadingLiveRoute ? t("route.calculating") : t("route.useLive")}
         </button>
 
         <span
@@ -230,7 +231,7 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
               : "border-white/10 bg-black/20 text-neutral-500",
           ].join(" ")}
         >
-          {liveRoute ? "Mapbox live route active" : "Local fallback active"}
+          {liveRoute ? t("route.mapboxActive") : t("route.localActive")}
         </span>
       </div>
 
@@ -262,7 +263,7 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
                     {store.storeName}
                   </div>
                   <div className="mt-1 text-xs text-neutral-500">
-                    {store.city} · {currency(store.totalPotentialProfit)} potential
+                    {store.city} · {currency(store.totalPotentialProfit)} {t("route.potential")}
                   </div>
                   <div className="mt-1 text-[11px] text-neutral-700">
                     {store.latitude.toFixed(4)}, {store.longitude.toFixed(4)}
@@ -288,36 +289,36 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <Metric
           icon={Route}
-          label={liveRoute ? "Road miles" : "Est. road miles"}
+          label={liveRoute ? t("route.roadMiles") : t("route.estimatedRoadMiles")}
           value={`${effectiveMiles.toFixed(1)} mi`}
         />
         <Metric
           icon={Timer}
-          label="Drive time"
+          label={t("route.driveTime")}
           value={
             liveRoute
               ? `${Math.round(liveRoute.durationMinutes)} min`
-              : "Fallback"
+              : t("route.fallback")
           }
         />
         <Metric
           icon={Fuel}
-          label="Fuel cost"
+          label={t("route.fuelCost")}
           value={currency(effectiveFuelCost)}
         />
         <Metric
           icon={WalletCards}
-          label="Gross profit"
+          label={t("route.grossProfit")}
           value={currency(grossPotentialProfit)}
         />
         <Metric
           icon={WalletCards}
-          label="Net trip profit"
+          label={t("route.netTripProfit")}
           value={currency(netTripProfit)}
         />
         <Metric
           icon={Route}
-          label="Profit / mile"
+          label={t("route.profitPerMile")}
           value={currency(profitPerTripMile)}
         />
       </div>
@@ -335,7 +336,7 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
         <div className="rounded-xl border border-white/10 bg-black/30 p-4">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
             <MapPinned size={14} />
-            Suggested visit order
+            {t("route.visitOrder")}
           </div>
 
           {orderedStores.length > 0 ? (
@@ -355,7 +356,7 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
                           {index + 1}. {store.storeName}
                         </div>
                         <div className="mt-1 text-xs text-neutral-600">
-                          BUY score {store.averageBuyScore.toFixed(0)}
+                          {t("route.buyScore")} {store.averageBuyScore.toFixed(0)}
                         </div>
                       </div>
 
@@ -384,14 +385,12 @@ export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
             </div>
           ) : (
             <p className="mt-4 text-sm text-neutral-600">
-              Select at least one store to create a route.
+              {t("route.selectStore")}
             </p>
           )}
 
           <p className="mt-5 text-xs leading-5 text-neutral-600">
-            Live routing uses the server-side provider token and keeps it out of
-            the browser. If live routing is unavailable, FlipScout immediately
-            falls back to its local Haversine route estimate.
+            {t("route.fallbackInfo")}
           </p>
         </div>
       </div>

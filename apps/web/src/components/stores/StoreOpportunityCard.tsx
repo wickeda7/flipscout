@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { MapPin, Package, TrendingUp } from "lucide-react";
 import type { StoreOpportunity } from "@/lib/store-planning";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 function currency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -17,6 +20,8 @@ export function StoreOpportunityCard({
   store: StoreOpportunity;
   rank: number;
 }) {
+  const { t } = useI18n();
+
   return (
     <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
@@ -41,12 +46,12 @@ export function StoreOpportunityCard({
         </div>
 
         <div className="text-left sm:text-right">
-          <div className="text-xs text-neutral-500">Potential profit</div>
+          <div className="text-xs text-neutral-500">{t("dashboard.potentialProfit")}</div>
           <div className="mt-1 text-3xl font-bold tracking-tight text-white">
             {currency(store.totalPotentialProfit)}
           </div>
           <div className="mt-1 text-xs text-emerald-300">
-            {currency(store.profitPerMile)} / mile
+            {currency(store.profitPerMile)} {t("route.profitPerMile")}
           </div>
         </div>
       </div>
@@ -54,29 +59,29 @@ export function StoreOpportunityCard({
       <div className="mt-5 grid gap-3 sm:grid-cols-4">
         <Metric
           icon={TrendingUp}
-          label="Avg BUY score"
+          label={t("stores.avgBuyScore")}
           value={store.averageBuyScore.toFixed(0)}
         />
         <Metric
           icon={Package}
-          label="Deals"
+          label={t("stores.deals")}
           value={String(store.dealCount)}
         />
         <Metric
           icon={Package}
-          label="Units"
+          label={t("stores.units")}
           value={String(store.unitCount)}
         />
         <Metric
           icon={TrendingUp}
-          label="Strong buys"
+          label={t("stores.strongBuys")}
           value={String(store.strongBuyCount)}
         />
       </div>
 
       <div className="mt-5 border-t border-white/10 pt-4">
         <div className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-          Best opportunities
+          {t("stores.bestOpportunities")}
         </div>
 
         <div className="mt-3 space-y-2">
@@ -91,7 +96,7 @@ export function StoreOpportunityCard({
                   {deal.productName}
                 </div>
                 <div className="mt-1 text-xs text-neutral-600">
-                  ${deal.clearancePrice.toFixed(2)} buy · {deal.inventory} units
+                  ${deal.clearancePrice.toFixed(2)} {t("stores.buy")} · {deal.inventory} {t("stores.unitsWord")}
                 </div>
               </div>
 

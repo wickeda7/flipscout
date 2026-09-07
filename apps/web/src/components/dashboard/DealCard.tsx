@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { Clock3, MapPin, Package2, Store } from "lucide-react";
 import type { Deal } from "@/types/deal";
 import { SaveDealButton } from "@/components/watchlist/SaveDealButton";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 function statusClasses(status: Deal["status"]) {
   switch (status) {
@@ -16,12 +19,9 @@ function statusClasses(status: Deal["status"]) {
   }
 }
 
-function statusLabel(status: Deal["status"]) {
-  if (status === "strong-buy") return "STRONG BUY";
-  return status.toUpperCase();
-}
 
 export function DealCard({ deal }: { deal: Deal }) {
+  const { t } = useI18n();
   const discount = Math.round(
     ((deal.retailPrice - deal.clearancePrice) / deal.retailPrice) * 100,
   );
@@ -45,7 +45,7 @@ export function DealCard({ deal }: { deal: Deal }) {
         >
           <div className="text-xl font-bold leading-none">{deal.buyScore}</div>
           <div className="mt-1 text-[10px] font-semibold tracking-wide">
-            {statusLabel(deal.status)}
+            {t(`status.${deal.status}`)}
           </div>
         </div>
       </div>
@@ -61,44 +61,44 @@ export function DealCard({ deal }: { deal: Deal }) {
         </span>
         <span className="flex items-center gap-1.5">
           <Package2 size={14} />
-          {deal.inventory} in stock
+          {deal.inventory} {t("deal.inStock")}
         </span>
         <span className="flex items-center gap-1.5">
           <Clock3 size={14} />
-          {deal.updatedMinutesAgo}m ago
+          {deal.updatedMinutesAgo}m {t("deal.ago")}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <Metric
-          label="Clearance"
+          label={t("deal.clearance")}
           value={`$${deal.clearancePrice.toFixed(2)}`}
-          helper={`${discount}% off`}
+          helper={`${discount}% ${t("deal.off")}`}
         />
         <Metric
-          label="Expected resale"
+          label={t("deal.expectedResale")}
           value={`$${deal.resalePrice.toFixed(2)}`}
-          helper="market estimate"
+          helper={t("deal.marketEstimate")}
         />
         <Metric
-          label="Est. profit"
+          label={t("deal.estimatedProfit")}
           value={`$${deal.estimatedProfit.toFixed(2)}`}
-          helper="after costs"
+          helper={t("deal.afterCosts")}
         />
         <Metric
           label="ROI"
           value={`${deal.roi.toFixed(0)}%`}
-          helper="on purchase cost"
+          helper={t("deal.onPurchaseCost")}
         />
         <Metric
-          label="Margin"
+          label={t("deal.margin")}
           value={`${deal.margin.toFixed(0)}%`}
-          helper="of resale price"
+          helper={t("deal.ofResalePrice")}
         />
         <Metric
-          label="Break-even"
+          label={t("deal.breakEven")}
           value={`$${deal.breakEvenPrice.toFixed(2)}`}
-          helper="minimum sale price"
+          helper={t("deal.minimumSalePrice")}
         />
       </div>
 
@@ -108,7 +108,7 @@ export function DealCard({ deal }: { deal: Deal }) {
           href={`/deals/${deal.id}`}
           className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white"
         >
-          View full analysis →
+          {t("deal.viewAnalysis")}
         </Link>
       </div>
     </article>
