@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Calculator,
@@ -14,6 +16,16 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 
 export function Sidebar() {
   const { locale, setLocale, t } = useI18n();
+  const pathname = usePathname();
+  const [hash, setHash] = useState("");
+
+  useEffect(() => {
+    const updateHash = () => setHash(window.location.hash);
+    updateHash();
+
+    window.addEventListener("hashchange", updateHash);
+    return () => window.removeEventListener("hashchange", updateHash);
+  }, [pathname]);
 
   const nav = [
     { label: t("nav.dashboard"), icon: BarChart3, href: "/" },
@@ -41,16 +53,42 @@ export function Sidebar() {
       </Link>
 
       <nav className="space-y-1">
-        {nav.map(({ label, icon: Icon, href }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-neutral-400 transition-colors hover:bg-white/5 hover:text-white"
-          >
-            <Icon size={18} />
-            {label}
-          </Link>
-        ))}
+        {nav.map(({ label, icon: Icon, href }) => {
+          const isDealsLink = href === "/#deals";
+          const isDashboardLink = href === "/";
+
+          const isActive = isDealsLink
+            ? pathname === "/" && hash === "#deals"
+            : isDashboardLink
+              ? pathname === "/" && hash !== "#deals"
+              : pathname === href || pathname.startsWith(`${href}/`);
+
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={isActive ? "page" : undefined}
+              className={[
+                "relative flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-all",
+                isActive
+                  ? "border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-300 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.06)]"
+                  : "border-transparent text-neutral-400 hover:bg-white/5 hover:text-white",
+              ].join(" ")}
+            >
+              {isActive && (
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-2 left-0 top-2 w-1 rounded-r-full bg-emerald-400"
+                />
+              )}
+              <Icon
+                size={18}
+                strokeWidth={isActive ? 2.4 : 2}
+              />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="mt-auto rounded-xl border border-white/10 bg-white/[0.025] p-3">

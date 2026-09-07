@@ -147,12 +147,10 @@ function Summary({
             {value}
           </div>
         </div>
-
         <div className="rounded-lg border border-white/10 bg-black p-2 text-neutral-400">
           <Icon size={17} />
         </div>
       </div>
-
       <div className="mt-3 text-xs leading-5 text-neutral-600">{helper}</div>
     </div>
   );
