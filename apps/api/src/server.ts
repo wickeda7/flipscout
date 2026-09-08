@@ -9,6 +9,7 @@ import {
 } from "./mapbox-routing.js";
 
 const PORT = Number(process.env.PORT ?? 4000);
+const NODE_ENV = process.env.NODE_ENV ?? "development";
 const WEB_ORIGIN = process.env.WEB_ORIGIN ?? "http://localhost:3000";
 const { name: dataProviderName, provider: dealProvider } = createDealProvider();
 
@@ -147,7 +148,12 @@ const server = createServer(async (request, response) => {
     }
 
     console.error(error);
-    writeJson(response, 500, { error: "Unexpected server error." });
+    writeJson(response, 500, {
+      error: "Unexpected server error.",
+      ...(NODE_ENV !== "production" && error instanceof Error
+        ? { detail: error.message }
+        : {}),
+    });
   }
 });
 

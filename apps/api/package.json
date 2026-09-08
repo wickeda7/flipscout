@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:bootstrap": "tsx scripts/bootstrap-db.ts",
+    "db:check": "tsx scripts/check-db.ts"
   },
   "dependencies": {
     "@flipscout/types": "0.1.0",

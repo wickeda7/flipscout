@@ -10,7 +10,9 @@
     "dev:web": "npm run dev -w @flipscout/web",
     "dev:api": "npm run dev -w @flipscout/api",
     "build:web": "npm run build -w @flipscout/web",
-    "typecheck:api": "npm run typecheck -w @flipscout/api"
+    "typecheck:api": "npm run typecheck -w @flipscout/api",
+    "db:bootstrap": "yarn workspace @flipscout/api db:bootstrap",
+    "db:check": "yarn workspace @flipscout/api db:check"
   },
   "engines": {
     "node": ">=20.9.0"

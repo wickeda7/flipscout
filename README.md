@@ -189,3 +189,37 @@ GET /v1/deals?lat=28.7589&lng=-81.3178
 
 The shared API client supports the same origin through `latitude` and
 `longitude`, so the future React Native client can use the same API contract.
+
+## Database bootstrap and diagnostics
+
+With `apps/api/.env` configured, initialize the FlipScout PostgreSQL database
+directly through Yarn from the monorepo root:
+
+```bash
+yarn db:bootstrap
+```
+
+This applies both `database/schema.sql` and `database/seed.sql`. Both files are
+written to be rerunnable for the current development workflow.
+
+Verify the connection, required tables, and deal count with:
+
+```bash
+yarn db:check
+```
+
+Example successful output:
+
+```json
+{
+  "ok": true,
+  "database": "flipscout",
+  "tables": ["deals", "stores", "user_preferences", "users", "watchlist_items"],
+  "missingTables": [],
+  "dealCount": 6
+}
+```
+
+During development, API 500 responses now include a `detail` field containing
+the underlying error message. Production responses continue to hide internal
+error details.
