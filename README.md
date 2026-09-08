@@ -444,3 +444,46 @@ created account if email delivery is temporarily unavailable. The API records
 the delivery result and logs the provider failure so the user can retry.
 Forgot-password keeps its response generic regardless of account existence or
 email-delivery state to prevent account enumeration.
+
+## Authentication security hardening
+
+The API now applies dependency-free, per-client rate limits to sensitive auth
+operations:
+
+```text
+register             5 requests / 60 minutes
+login               10 requests / 15 minutes
+forgot password      5 requests / 15 minutes
+reset password      10 requests / 15 minutes
+verify email        10 requests / 15 minutes
+resend verification  5 requests / 15 minutes
+change password      5 requests / 15 minutes
+```
+
+Rate-limited requests return HTTP `429`, code `RATE_LIMITED`, and a standard
+`Retry-After` header.
+
+By default, FlipScout identifies clients from the TCP socket. If the API is
+deployed behind a trusted reverse proxy that overwrites `X-Forwarded-For`, set:
+
+```env
+TRUST_PROXY=true
+```
+
+Do not enable `TRUST_PROXY` when clients can send `X-Forwarded-For` directly.
+
+The current limiter is intentionally in-memory and dependency-free. It is
+appropriate for local development and a single API instance. Before horizontally
+scaling the API, replace its backing store with a shared limiter such as Redis
+so limits are consistent across instances.
+
+JSON request bodies are capped at 64 KiB. Empty or malformed JSON now returns
+HTTP `400` with `INVALID_JSON`, and oversized JSON returns HTTP `413` with
+`PAYLOAD_TOO_LARGE` instead of falling into the generic 500 handler.
+
+`AUTH_SESSION_DAYS`, `PASSWORD_RESET_MINUTES`, and
+`EMAIL_VERIFICATION_HOURS` are now required to be positive integers when set.
+Invalid values fail explicitly rather than producing broken expiration times.
+
+API JSON responses also include `Cache-Control: no-store` and
+`X-Content-Type-Options: nosniff`.

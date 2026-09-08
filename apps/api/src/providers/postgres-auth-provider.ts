@@ -17,6 +17,7 @@ import {
   verifyPassword,
 } from "../auth-crypto.js";
 import { AuthError, type AuthProvider } from "./auth-provider.js";
+import { positiveIntegerEnv } from "../security/config.js";
 
 type UserRow = {
   id: string;
@@ -192,7 +193,7 @@ export class PostgresAuthProvider implements AuthProvider {
 
     const token = createPasswordResetToken();
     const tokenHash = hashPasswordResetToken(token);
-    const minutes = Number(process.env.PASSWORD_RESET_MINUTES ?? 30);
+    const minutes = positiveIntegerEnv("PASSWORD_RESET_MINUTES", 30);
 
     await this.pool.query(
       "DELETE FROM password_reset_tokens WHERE user_id = $1",
@@ -287,7 +288,7 @@ export class PostgresAuthProvider implements AuthProvider {
 
     const token = createEmailVerificationToken();
     const tokenHash = hashEmailVerificationToken(token);
-    const hours = Number(process.env.EMAIL_VERIFICATION_HOURS ?? 24);
+    const hours = positiveIntegerEnv("EMAIL_VERIFICATION_HOURS", 24);
 
     await this.pool.query(
       "DELETE FROM email_verification_tokens WHERE user_id = $1",
@@ -372,7 +373,7 @@ export class PostgresAuthProvider implements AuthProvider {
   private async createSession(user: AuthUser): Promise<AuthResponse> {
     const accessToken = createAccessToken();
     const tokenHash = hashAccessToken(accessToken);
-    const sessionDays = Number(process.env.AUTH_SESSION_DAYS ?? 30);
+    const sessionDays = positiveIntegerEnv("AUTH_SESSION_DAYS", 30);
 
     await this.pool.query(
       `

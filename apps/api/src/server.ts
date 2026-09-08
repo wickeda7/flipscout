@@ -5,6 +5,8 @@ import type { ChangePasswordRequest, ForgotPasswordRequest, LoginRequest, Optimi
 import { createProviders } from "./providers/index.js";
 import { AuthError } from "./providers/auth-provider.js";
 import { createEmailProvider } from "./email/index.js";
+import { InMemoryRateLimiter } from "./security/rate-limit.js";
+import { RequestError } from "./security/request-error.js";
 import {
   optimizeWithMapbox,
   RouteError,
@@ -20,6 +22,7 @@ const {
   authProvider,
 } = createProviders();
 const emailProvider = createEmailProvider();
+const rateLimiter = new InMemoryRateLimiter();
 
 const DEV_USER_ID =
   process.env.DEV_USER_ID ?? "00000000-0000-0000-0000-000000000001";
@@ -82,12 +85,16 @@ function writeJson(
   response: import("node:http").ServerResponse,
   status: number,
   body: unknown,
+  headers: Record<string, string> = {},
 ) {
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
     "Access-Control-Allow-Origin": WEB_ORIGIN,
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+    ...headers,
   });
   response.end(JSON.stringify(body));
 }
@@ -96,10 +103,74 @@ async function readJson<T>(
   request: import("node:http").IncomingMessage,
 ): Promise<T> {
   const chunks: Buffer[] = [];
+  let totalBytes = 0;
+  const maxBytes = 64 * 1024;
+
   for await (const chunk of request) {
-    chunks.push(Buffer.from(chunk));
+    const buffer = Buffer.from(chunk);
+    totalBytes += buffer.length;
+
+    if (totalBytes > maxBytes) {
+      throw new RequestError(
+        "Request body is too large.",
+        413,
+        "PAYLOAD_TOO_LARGE",
+      );
+    }
+
+    chunks.push(buffer);
   }
-  return JSON.parse(Buffer.concat(chunks).toString("utf8")) as T;
+
+  const raw = Buffer.concat(chunks).toString("utf8");
+
+  if (!raw.trim()) {
+    throw new RequestError(
+      "JSON request body is required.",
+      400,
+      "INVALID_JSON",
+    );
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    throw new RequestError(
+      "Request body must contain valid JSON.",
+      400,
+      "INVALID_JSON",
+    );
+  }
+}
+
+function enforceRateLimit(
+  request: import("node:http").IncomingMessage,
+  response: import("node:http").ServerResponse,
+  key: string,
+  limit: number,
+  windowMs: number,
+): boolean {
+  const result = rateLimiter.check(request, {
+    key,
+    limit,
+    windowMs,
+  });
+
+  if (result.allowed) return true;
+
+  writeJson(
+    response,
+    429,
+    {
+      error: "Too many requests. Try again later.",
+      code: "RATE_LIMITED",
+      retryAfterSeconds: result.retryAfterSeconds,
+    },
+    {
+      "Retry-After": String(result.retryAfterSeconds),
+    },
+  );
+
+  return false;
 }
 
 const server = createServer(async (request, response) => {
@@ -141,6 +212,9 @@ const server = createServer(async (request, response) => {
 
 
     if (request.method === "POST" && url.pathname === "/v1/auth/register") {
+      if (!enforceRateLimit(request, response, "auth:register", 5, 60 * 60 * 1000)) {
+        return;
+      }
       const body = await readJson<RegisterRequest>(request);
       const email = body.email?.trim() ?? "";
       const password = body.password ?? "";
@@ -209,6 +283,9 @@ const server = createServer(async (request, response) => {
 
 
     if (request.method === "POST" && url.pathname === "/v1/auth/verify-email") {
+      if (!enforceRateLimit(request, response, "auth:verify-email", 10, 15 * 60 * 1000)) {
+        return;
+      }
       const body = await readJson<VerifyEmailRequest>(request);
       const token = body.token?.trim() ?? "";
 
@@ -229,6 +306,9 @@ const server = createServer(async (request, response) => {
       request.method === "POST" &&
       url.pathname === "/v1/auth/resend-verification"
     ) {
+      if (!enforceRateLimit(request, response, "auth:resend-verification", 5, 15 * 60 * 1000)) {
+        return;
+      }
       const bearerToken = getBearerToken(request);
 
       if (!bearerToken) {
@@ -294,6 +374,9 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/v1/auth/forgot-password") {
+      if (!enforceRateLimit(request, response, "auth:forgot-password", 5, 15 * 60 * 1000)) {
+        return;
+      }
       const body = await readJson<ForgotPasswordRequest>(request);
       const email = body.email?.trim() ?? "";
 
@@ -335,6 +418,9 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/v1/auth/reset-password") {
+      if (!enforceRateLimit(request, response, "auth:reset-password", 10, 15 * 60 * 1000)) {
+        return;
+      }
       const body = await readJson<ResetPasswordRequest>(request);
       const token = body.token?.trim() ?? "";
       const newPassword = body.newPassword ?? "";
@@ -361,6 +447,9 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/v1/auth/login") {
+      if (!enforceRateLimit(request, response, "auth:login", 10, 15 * 60 * 1000)) {
+        return;
+      }
       const body = await readJson<LoginRequest>(request);
       const email = body.email?.trim() ?? "";
       const password = body.password ?? "";
@@ -433,6 +522,9 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/v1/account/password") {
+      if (!enforceRateLimit(request, response, "account:password", 5, 15 * 60 * 1000)) {
+        return;
+      }
       const userId = await resolveUserId(request);
       const body = await readJson<ChangePasswordRequest>(request);
 
@@ -599,6 +691,14 @@ const server = createServer(async (request, response) => {
 
     writeJson(response, 404, { error: "Endpoint not found." });
   } catch (error) {
+    if (error instanceof RequestError) {
+      writeJson(response, error.status, {
+        error: error.message,
+        code: error.code,
+      });
+      return;
+    }
+
     if (error instanceof AuthError) {
       writeJson(response, error.status, {
         error: error.message,

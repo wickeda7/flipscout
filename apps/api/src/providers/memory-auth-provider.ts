@@ -16,6 +16,7 @@ import {
   verifyPassword,
 } from "../auth-crypto.js";
 import { AuthError, type AuthProvider } from "./auth-provider.js";
+import { positiveIntegerEnv } from "../security/config.js";
 
 type MemoryUser = AuthUser & { passwordHash: string };
 
@@ -134,7 +135,9 @@ export class MemoryAuthProvider implements AuthProvider {
     const token = createPasswordResetToken();
     this.passwordResets.set(hashPasswordResetToken(token), {
       userId: user.id,
-      expiresAt: Date.now() + 30 * 60 * 1000,
+      expiresAt:
+        Date.now() +
+        positiveIntegerEnv("PASSWORD_RESET_MINUTES", 30) * 60 * 1000,
     });
 
     return token;
@@ -184,7 +187,9 @@ export class MemoryAuthProvider implements AuthProvider {
     const token = createEmailVerificationToken();
     this.emailVerifications.set(hashEmailVerificationToken(token), {
       userId,
-      expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+      expiresAt:
+        Date.now() +
+        positiveIntegerEnv("EMAIL_VERIFICATION_HOURS", 24) * 60 * 60 * 1000,
     });
 
     return token;
