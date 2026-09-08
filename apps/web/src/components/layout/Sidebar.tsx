@@ -8,14 +8,19 @@ import {
   Calculator,
   Heart,
   Languages,
+  LogIn,
+  LogOut,
   MapPinned,
   Radar,
   Tags,
+  UserRound,
 } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export function Sidebar() {
   const { locale, setLocale, t } = useI18n();
+  const { user, loading: authLoading, logout } = useAuth();
   const pathname = usePathname();
   const [hash, setHash] = useState("");
 
@@ -91,10 +96,59 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto rounded-xl border border-white/10 bg-white/[0.025] p-3">
+      <div className="mt-auto space-y-3">
+        <div className="rounded-xl border border-white/10 bg-white/[0.025] p-3">
+          {authLoading ? (
+            <div className="h-9 animate-pulse rounded-lg bg-white/5" />
+          ) : user ? (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-300">
+                  <UserRound size={16} />
+                </span>
+                <div className="min-w-0">
+                  <div className="truncate text-xs font-semibold text-white">
+                    {user.displayName || user.email}
+                  </div>
+                  {user.displayName && (
+                    <div className="truncate text-[11px] text-neutral-600">
+                      {user.email}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-neutral-400 transition hover:bg-white/5 hover:text-white"
+              >
+                <LogOut size={14} />
+                {t("auth.logout")}
+              </button>
+            </>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/login"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 px-2 py-2 text-xs text-neutral-300 transition hover:bg-white/5 hover:text-white"
+              >
+                <LogIn size={13} />
+                {t("auth.login")}
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-lg bg-white px-2 py-2 text-center text-xs font-semibold text-black transition hover:bg-neutral-200"
+              >
+                {t("auth.register")}
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-white/[0.025] p-3">
         <div className="mb-2 flex items-center gap-2 text-xs text-neutral-500">
           <Languages size={14} />
-          Language
+          {t("language.label")}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -121,6 +175,7 @@ export function Sidebar() {
           >
             VI
           </button>
+        </div>
         </div>
       </div>
     </aside>

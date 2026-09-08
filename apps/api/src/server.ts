@@ -1,8 +1,9 @@
 import "dotenv/config";
 import { createServer } from "node:http";
 import { URL } from "node:url";
-import type { OptimizeRouteRequest } from "@flipscout/types";
+import type { LoginRequest, OptimizeRouteRequest, RegisterRequest } from "@flipscout/types";
 import { createProviders } from "./providers/index.js";
+import { AuthError } from "./providers/auth-provider.js";
 import {
   optimizeWithMapbox,
   RouteError,
@@ -15,10 +16,34 @@ const {
   name: dataProviderName,
   dealProvider,
   watchlistProvider,
+  authProvider,
 } = createProviders();
 
 const DEV_USER_ID =
   process.env.DEV_USER_ID ?? "00000000-0000-0000-0000-000000000001";
+
+
+function getBearerToken(
+  request: import("node:http").IncomingMessage,
+): string | null {
+  const header = request.headers.authorization;
+  if (!header?.startsWith("Bearer ")) return null;
+  return header.slice("Bearer ".length).trim() || null;
+}
+
+async function resolveUserId(
+  request: import("node:http").IncomingMessage,
+): Promise<string> {
+  const token = getBearerToken(request);
+  if (!token) return DEV_USER_ID;
+
+  const user = await authProvider.getUserByToken(token);
+  return user?.id ?? DEV_USER_ID;
+}
+
+function validateEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
 function writeJson(
   response: import("node:http").ServerResponse,
@@ -80,6 +105,97 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+
+    if (request.method === "POST" && url.pathname === "/v1/auth/register") {
+      const body = await readJson<RegisterRequest>(request);
+      const email = body.email?.trim() ?? "";
+      const password = body.password ?? "";
+      const displayName = body.displayName?.trim();
+
+      if (!validateEmail(email)) {
+        writeJson(response, 400, {
+          error: "Enter a valid email address.",
+          code: "INVALID_EMAIL",
+        });
+        return;
+      }
+
+      if (password.length < 8) {
+        writeJson(response, 400, {
+          error: "Password must be at least 8 characters.",
+          code: "WEAK_PASSWORD",
+        });
+        return;
+      }
+
+      if (displayName && displayName.length > 80) {
+        writeJson(response, 400, {
+          error: "Display name must be 80 characters or fewer.",
+          code: "INVALID_DISPLAY_NAME",
+        });
+        return;
+      }
+
+      const auth = await authProvider.register({
+        email,
+        password,
+        displayName,
+      });
+
+      writeJson(response, 201, auth);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/auth/login") {
+      const body = await readJson<LoginRequest>(request);
+      const email = body.email?.trim() ?? "";
+      const password = body.password ?? "";
+
+      if (!email || !password) {
+        writeJson(response, 400, {
+          error: "Email and password are required.",
+          code: "MISSING_CREDENTIALS",
+        });
+        return;
+      }
+
+      const auth = await authProvider.login({ email, password });
+      writeJson(response, 200, auth);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/v1/auth/me") {
+      const token = getBearerToken(request);
+
+      if (!token) {
+        writeJson(response, 401, {
+          error: "Authentication required.",
+          code: "UNAUTHORIZED",
+        });
+        return;
+      }
+
+      const user = await authProvider.getUserByToken(token);
+
+      if (!user) {
+        writeJson(response, 401, {
+          error: "Session is invalid or expired.",
+          code: "UNAUTHORIZED",
+        });
+        return;
+      }
+
+      writeJson(response, 200, { user });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/auth/logout") {
+      const token = getBearerToken(request);
+      if (token) await authProvider.logout(token);
+      writeJson(response, 200, { ok: true });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/v1/deals") {
       const q = url.searchParams.get("q")?.trim() || undefined;
       const retailer = url.searchParams.get("retailer") || undefined;
@@ -129,7 +245,8 @@ const server = createServer(async (request, response) => {
 
 
     if (url.pathname === "/v1/watchlist" && request.method === "GET") {
-      const items = await watchlistProvider.list(DEV_USER_ID);
+      const userId = await resolveUserId(request);
+      const items = await watchlistProvider.list(userId);
       writeJson(response, 200, { items });
       return;
     }
@@ -148,7 +265,8 @@ const server = createServer(async (request, response) => {
         return;
       }
 
-      await watchlistProvider.add(DEV_USER_ID, body.dealId);
+      const userId = await resolveUserId(request);
+      await watchlistProvider.add(userId, body.dealId);
       writeJson(response, 201, { ok: true });
       return;
     }
@@ -159,7 +277,8 @@ const server = createServer(async (request, response) => {
 
     if (request.method === "DELETE" && watchlistItemMatch) {
       const dealId = decodeURIComponent(watchlistItemMatch[1]);
-      await watchlistProvider.remove(DEV_USER_ID, dealId);
+      const userId = await resolveUserId(request);
+      await watchlistProvider.remove(userId, dealId);
       writeJson(response, 200, { ok: true });
       return;
     }
@@ -168,7 +287,8 @@ const server = createServer(async (request, response) => {
       request.method === "DELETE" &&
       url.pathname === "/v1/watchlist"
     ) {
-      await watchlistProvider.clear(DEV_USER_ID);
+      const userId = await resolveUserId(request);
+      await watchlistProvider.clear(userId);
       writeJson(response, 200, { ok: true });
       return;
     }
@@ -195,6 +315,14 @@ const server = createServer(async (request, response) => {
 
     writeJson(response, 404, { error: "Endpoint not found." });
   } catch (error) {
+    if (error instanceof AuthError) {
+      writeJson(response, error.status, {
+        error: error.message,
+        code: error.code,
+      });
+      return;
+    }
+
     if (error instanceof RouteError) {
       writeJson(response, error.status, { error: error.message });
       return;

@@ -256,3 +256,41 @@ the API restarts. When `DATA_PROVIDER=postgres`, watchlist data persists in
 `watchlist_items`. The API boundary is already suitable for the future React
 Native client; authentication will replace `DEV_USER_ID` later without changing
 the basic watchlist resource model.
+
+## Authentication foundation
+
+FlipScout now includes web routes:
+
+```text
+/login
+/register
+```
+
+and shared API routes:
+
+```text
+POST /v1/auth/register
+POST /v1/auth/login
+GET  /v1/auth/me
+POST /v1/auth/logout
+```
+
+Passwords are hashed with Node's `scrypt` before storage. PostgreSQL stores only
+the password hash and a SHA-256 hash of each generated session token. Raw
+session tokens are returned only when a session is created.
+
+Run the database bootstrap after upgrading:
+
+```bash
+yarn db:bootstrap
+```
+
+The web client currently persists its bearer token in browser localStorage so
+the same API contract can also be consumed by the future React Native client.
+Before production, the web authentication transport should be hardened to an
+HttpOnly/Secure cookie or another production session strategy, while React
+Native should keep credentials in platform secure storage.
+
+Authenticated watchlist requests use the logged-in user ID. Until auth is
+required everywhere, requests without a bearer token continue to use
+`DEV_USER_ID` as the development fallback.

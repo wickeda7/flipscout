@@ -1,7 +1,11 @@
 import type {
+  AuthResponse,
+  AuthUser,
   Deal,
+  LoginRequest,
   OptimizeRouteRequest,
   OptimizeRouteResponse,
+  RegisterRequest,
   WatchlistResponse,
 } from "@flipscout/types";
 
@@ -11,9 +15,14 @@ export interface FlipScoutApiClientOptions {
 
 export class FlipScoutApiClient {
   private readonly baseUrl: string;
+  private accessToken: string | null = null;
 
   constructor({ baseUrl }: FlipScoutApiClientOptions) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
+  }
+
+  setAccessToken(token: string | null) {
+    this.accessToken = token;
   }
 
   async listDeals(query: {
@@ -37,15 +46,69 @@ export class FlipScoutApiClient {
   async getDeal(id: string): Promise<Deal | null> {
     const response = await fetch(
       `${this.baseUrl}/v1/deals/${encodeURIComponent(id)}`,
-      { cache: "no-store" },
+      {
+        cache: "no-store",
+        headers: this.authHeaders(),
+      },
     );
 
     if (response.status === 404) return null;
     if (!response.ok) {
-      throw new Error(`FlipScout API failed (${response.status}).`);
+      throw await this.responseError(response);
     }
 
     return (await response.json()) as Deal;
+  }
+
+  async register(input: RegisterRequest): Promise<AuthResponse> {
+    return this.request<AuthResponse>("/v1/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+  }
+
+  async login(input: LoginRequest): Promise<AuthResponse> {
+    return this.request<AuthResponse>("/v1/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+  }
+
+  async me(): Promise<{ user: AuthUser }> {
+    return this.request<{ user: AuthUser }>("/v1/auth/me");
+  }
+
+  async logout(): Promise<void> {
+    await this.request<{ ok: true }>("/v1/auth/logout", {
+      method: "POST",
+    });
+  }
+
+  async getWatchlist(): Promise<WatchlistResponse> {
+    return this.request<WatchlistResponse>("/v1/watchlist");
+  }
+
+  async addToWatchlist(dealId: string): Promise<void> {
+    await this.request<{ ok: true }>("/v1/watchlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dealId }),
+    });
+  }
+
+  async removeFromWatchlist(dealId: string): Promise<void> {
+    await this.request<{ ok: true }>(
+      `/v1/watchlist/${encodeURIComponent(dealId)}`,
+      { method: "DELETE" },
+    );
+  }
+
+  async clearWatchlist(): Promise<void> {
+    await this.request<{ ok: true }>("/v1/watchlist", {
+      method: "DELETE",
+    });
   }
 
   async optimizeRoute(
@@ -58,53 +121,46 @@ export class FlipScoutApiClient {
     });
   }
 
+  private authHeaders(): HeadersInit {
+    return this.accessToken
+      ? { Authorization: `Bearer ${this.accessToken}` }
+      : {};
+  }
+
   private async request<T>(
     path: string,
-    init?: RequestInit,
+    init: RequestInit = {},
   ): Promise<T> {
+    const headers = new Headers(init.headers);
+    if (this.accessToken) {
+      headers.set("Authorization", `Bearer ${this.accessToken}`);
+    }
+
     const response = await fetch(`${this.baseUrl}${path}`, {
       ...init,
+      headers,
       cache: "no-store",
     });
 
     if (!response.ok) {
-      const body = await response
-        .json()
-        .catch(() => ({ error: `Request failed (${response.status}).` }));
-
-      throw new Error(
-        typeof body?.error === "string"
-          ? body.error
-          : `FlipScout API failed (${response.status}).`,
-      );
+      throw await this.responseError(response);
     }
 
     return (await response.json()) as T;
   }
 
-  async getWatchlist(): Promise<WatchlistResponse> {
-  return this.request<WatchlistResponse>("/v1/watchlist");
-}
+  private async responseError(response: Response): Promise<Error> {
+    const body = await response
+      .json()
+      .catch(() => ({ error: `Request failed (${response.status}).` }));
 
-  async addToWatchlist(dealId: string): Promise<void> {
-  await this.request<{ ok: true }>("/v1/watchlist", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ dealId }),
-  });
-}
+    const message =
+      typeof body?.error === "string"
+        ? body.error
+        : `FlipScout API failed (${response.status}).`;
 
-  async removeFromWatchlist(dealId: string): Promise<void> {
-  await this.request<{ ok: true }>(
-    `/v1/watchlist/${encodeURIComponent(dealId)}`,
-    { method: "DELETE" },
-  );
-}
-
-  async clearWatchlist(): Promise<void> {
-  await this.request<{ ok: true }>("/v1/watchlist", {
-    method: "DELETE",
-  });
-}
-
+    const error = new Error(message) as Error & { code?: string };
+    if (typeof body?.code === "string") error.code = body.code;
+    return error;
+  }
 }

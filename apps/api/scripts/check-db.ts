@@ -28,6 +28,7 @@ async function run() {
     WHERE table_schema = 'public'
       AND table_name IN (
         'users',
+        'auth_sessions',
         'user_preferences',
         'stores',
         'deals',
@@ -39,6 +40,7 @@ async function run() {
   const tableNames = new Set(tables.rows.map((row) => row.table_name));
   const required = [
     "users",
+    "auth_sessions",
     "user_preferences",
     "stores",
     "deals",
