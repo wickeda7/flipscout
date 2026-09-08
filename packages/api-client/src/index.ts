@@ -2,6 +2,7 @@ import type {
   Deal,
   OptimizeRouteRequest,
   OptimizeRouteResponse,
+  WatchlistResponse,
 } from "@flipscout/types";
 
 export interface FlipScoutApiClientOptions {
@@ -80,4 +81,30 @@ export class FlipScoutApiClient {
 
     return (await response.json()) as T;
   }
+
+  async getWatchlist(): Promise<WatchlistResponse> {
+  return this.request<WatchlistResponse>("/v1/watchlist");
+}
+
+  async addToWatchlist(dealId: string): Promise<void> {
+  await this.request<{ ok: true }>("/v1/watchlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dealId }),
+  });
+}
+
+  async removeFromWatchlist(dealId: string): Promise<void> {
+  await this.request<{ ok: true }>(
+    `/v1/watchlist/${encodeURIComponent(dealId)}`,
+    { method: "DELETE" },
+  );
+}
+
+  async clearWatchlist(): Promise<void> {
+  await this.request<{ ok: true }>("/v1/watchlist", {
+    method: "DELETE",
+  });
+}
+
 }

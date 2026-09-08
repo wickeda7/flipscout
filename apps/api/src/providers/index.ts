@@ -2,12 +2,16 @@ import { Pool } from "pg";
 import type { DealProvider } from "./deal-provider.js";
 import { MockDealProvider } from "./mock-deal-provider.js";
 import { PostgresDealProvider } from "./postgres-deal-provider.js";
+import { MemoryWatchlistProvider } from "./memory-watchlist-provider.js";
+import { PostgresWatchlistProvider } from "./postgres-watchlist-provider.js";
+import type { WatchlistProvider } from "./watchlist-provider.js";
 
 export type DataProviderName = "mock" | "postgres";
 
-export function createDealProvider(): {
+export function createProviders(): {
   name: DataProviderName;
-  provider: DealProvider;
+  dealProvider: DealProvider;
+  watchlistProvider: WatchlistProvider;
 } {
   const requested = (process.env.DATA_PROVIDER ?? "mock").toLowerCase();
 
@@ -31,14 +35,17 @@ export function createDealProvider(): {
 
     return {
       name: "postgres",
-      provider: new PostgresDealProvider(pool),
+      dealProvider: new PostgresDealProvider(pool),
+      watchlistProvider: new PostgresWatchlistProvider(pool),
     };
   }
 
   return {
     name: "mock",
-    provider: new MockDealProvider(),
+    dealProvider: new MockDealProvider(),
+    watchlistProvider: new MemoryWatchlistProvider(),
   };
 }
 
 export type { DealProvider, DealQuery } from "./deal-provider.js";
+export type { WatchlistProvider } from "./watchlist-provider.js";

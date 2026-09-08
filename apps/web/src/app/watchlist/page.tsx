@@ -9,9 +9,11 @@ import { useDeals } from "@/hooks/use-deals";
 import { useI18n } from "@/components/i18n/I18nProvider";
 
 export default function WatchlistPage() {
-  const { savedIds, clear } = useWatchlist();
+  const { savedIds, clear, loading: watchlistLoading, error: watchlistError } = useWatchlist();
   const { t } = useI18n();
-  const { deals, loading, error } = useDeals();
+  const { deals, loading: dealsLoading, error: dealsError } = useDeals();
+  const loading = dealsLoading || watchlistLoading;
+  const error = dealsError || watchlistError;
 
   const savedDeals = deals.filter((deal) => savedIds.includes(deal.id));
   const totalProfit = savedDeals.reduce(
@@ -30,7 +32,7 @@ export default function WatchlistPage() {
             <div>
               <p className="text-sm text-neutral-500">{t("watchlist.context")}</p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                Watchlist
+                {t("nav.watchlist")}
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-neutral-400">
                 {t("watchlist.subtitle")}

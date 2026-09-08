@@ -55,3 +55,13 @@ export interface OptimizeRouteResponse {
   }>;
   geometry: [number, number][];
 }
+
+
+export interface WatchlistItem {
+  dealId: string;
+  createdAt: string;
+}
+
+export interface WatchlistResponse {
+  items: WatchlistItem[];
+}

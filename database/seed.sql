@@ -1,3 +1,18 @@
+
+INSERT INTO users (id, email, display_name)
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  'dev@flipscout.local',
+  'FlipScout Dev User'
+)
+ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  display_name = EXCLUDED.display_name;
+
+INSERT INTO user_preferences (user_id, locale)
+VALUES ('00000000-0000-0000-0000-000000000001', 'en')
+ON CONFLICT (user_id) DO NOTHING;
+
 -- FlipScout Phase 3 demo seed.
 -- Safe to rerun because fixed UUIDs are used with ON CONFLICT.
 

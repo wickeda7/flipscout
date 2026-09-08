@@ -2,7 +2,7 @@ import "dotenv/config";
 import { createServer } from "node:http";
 import { URL } from "node:url";
 import type { OptimizeRouteRequest } from "@flipscout/types";
-import { createDealProvider } from "./providers/index.js";
+import { createProviders } from "./providers/index.js";
 import {
   optimizeWithMapbox,
   RouteError,
@@ -11,7 +11,14 @@ import {
 const PORT = Number(process.env.PORT ?? 4000);
 const NODE_ENV = process.env.NODE_ENV ?? "development";
 const WEB_ORIGIN = process.env.WEB_ORIGIN ?? "http://localhost:3000";
-const { name: dataProviderName, provider: dealProvider } = createDealProvider();
+const {
+  name: dataProviderName,
+  dealProvider,
+  watchlistProvider,
+} = createProviders();
+
+const DEV_USER_ID =
+  process.env.DEV_USER_ID ?? "00000000-0000-0000-0000-000000000001";
 
 function writeJson(
   response: import("node:http").ServerResponse,
@@ -22,7 +29,7 @@ function writeJson(
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": WEB_ORIGIN,
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
   });
   response.end(JSON.stringify(body));
 }
@@ -117,6 +124,52 @@ const server = createServer(async (request, response) => {
       }
 
       writeJson(response, 200, deal);
+      return;
+    }
+
+
+    if (url.pathname === "/v1/watchlist" && request.method === "GET") {
+      const items = await watchlistProvider.list(DEV_USER_ID);
+      writeJson(response, 200, { items });
+      return;
+    }
+
+    if (url.pathname === "/v1/watchlist" && request.method === "POST") {
+      const body = await readJson<{ dealId?: string }>(request);
+
+      if (!body.dealId) {
+        writeJson(response, 400, { error: "dealId is required." });
+        return;
+      }
+
+      const deal = await dealProvider.getDeal(body.dealId);
+      if (!deal) {
+        writeJson(response, 404, { error: "Deal not found." });
+        return;
+      }
+
+      await watchlistProvider.add(DEV_USER_ID, body.dealId);
+      writeJson(response, 201, { ok: true });
+      return;
+    }
+
+    const watchlistItemMatch = url.pathname.match(
+      /^\/v1\/watchlist\/([^/]+)$/,
+    );
+
+    if (request.method === "DELETE" && watchlistItemMatch) {
+      const dealId = decodeURIComponent(watchlistItemMatch[1]);
+      await watchlistProvider.remove(DEV_USER_ID, dealId);
+      writeJson(response, 200, { ok: true });
+      return;
+    }
+
+    if (
+      request.method === "DELETE" &&
+      url.pathname === "/v1/watchlist"
+    ) {
+      await watchlistProvider.clear(DEV_USER_ID);
+      writeJson(response, 200, { ok: true });
       return;
     }
 

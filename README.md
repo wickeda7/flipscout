@@ -223,3 +223,36 @@ Example successful output:
 During development, API 500 responses now include a `detail` field containing
 the underlying error message. Production responses continue to hide internal
 error details.
+
+## Shared watchlist API
+
+Watchlist state now goes through the shared FlipScout API instead of browser
+`localStorage`:
+
+```text
+GET    /v1/watchlist
+POST   /v1/watchlist
+DELETE /v1/watchlist/:dealId
+DELETE /v1/watchlist
+```
+
+Until authentication is implemented, the API uses a stable development user:
+
+```env
+DEV_USER_ID=00000000-0000-0000-0000-000000000001
+```
+
+`database/seed.sql` creates that development user so PostgreSQL foreign-key
+constraints are satisfied. Re-run:
+
+```bash
+yarn db:bootstrap
+```
+
+after upgrading to this build.
+
+When `DATA_PROVIDER=mock`, watchlist data is held in API memory and resets when
+the API restarts. When `DATA_PROVIDER=postgres`, watchlist data persists in
+`watchlist_items`. The API boundary is already suitable for the future React
+Native client; authentication will replace `DEV_USER_ID` later without changing
+the basic watchlist resource model.
