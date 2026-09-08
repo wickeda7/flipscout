@@ -8,6 +8,9 @@ import { PostgresDealProvider } from "./postgres-deal-provider.js";
 import { MemoryWatchlistProvider } from "./memory-watchlist-provider.js";
 import { PostgresWatchlistProvider } from "./postgres-watchlist-provider.js";
 import type { WatchlistProvider } from "./watchlist-provider.js";
+import type { IngestionStatusProvider } from "./ingestion-status-provider.js";
+import { MemoryIngestionStatusProvider } from "./memory-ingestion-status-provider.js";
+import { PostgresIngestionStatusProvider } from "./postgres-ingestion-status-provider.js";
 
 export type DataProviderName = "mock" | "postgres";
 
@@ -16,6 +19,7 @@ export function createProviders(): {
   dealProvider: DealProvider;
   watchlistProvider: WatchlistProvider;
   authProvider: AuthProvider;
+  ingestionStatusProvider: IngestionStatusProvider;
 } {
   const requested = (process.env.DATA_PROVIDER ?? "mock").toLowerCase();
 
@@ -42,6 +46,7 @@ export function createProviders(): {
       dealProvider: new PostgresDealProvider(pool),
       watchlistProvider: new PostgresWatchlistProvider(pool),
       authProvider: new PostgresAuthProvider(pool),
+      ingestionStatusProvider: new PostgresIngestionStatusProvider(pool),
     };
   }
 
@@ -50,9 +55,12 @@ export function createProviders(): {
     dealProvider: new MockDealProvider(),
     watchlistProvider: new MemoryWatchlistProvider(),
     authProvider: new MemoryAuthProvider(),
+    ingestionStatusProvider: new MemoryIngestionStatusProvider(),
   };
 }
 
 export type { AuthProvider } from "./auth-provider.js";
 export type { DealProvider, DealQuery } from "./deal-provider.js";
 export type { WatchlistProvider } from "./watchlist-provider.js";
+
+export type { IngestionStatusProvider } from "./ingestion-status-provider.js";

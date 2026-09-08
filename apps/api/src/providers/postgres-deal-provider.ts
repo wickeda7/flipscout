@@ -108,6 +108,11 @@ export class PostgresDealProvider implements DealProvider {
       where.push(`d.category = $${values.length}`);
     }
 
+    if (query.source) {
+      values.push(query.source);
+      where.push(`d.source = $${values.length}`);
+    }
+
     const result = await this.pool.query<DealRow>(
       `
       SELECT

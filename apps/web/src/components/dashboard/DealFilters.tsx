@@ -10,8 +10,11 @@ interface DealFiltersProps {
   onRetailerChange: (value: string) => void;
   category: string;
   onCategoryChange: (value: string) => void;
+  source: string;
+  onSourceChange: (value: string) => void;
   retailers: string[];
   categories: string[];
+  sources: string[];
 }
 
 export function DealFilters({
@@ -21,8 +24,11 @@ export function DealFilters({
   onRetailerChange,
   category,
   onCategoryChange,
+  source,
+  onSourceChange,
   retailers,
   categories,
+  sources,
 }: DealFiltersProps) {
   const { t } = useI18n();
   const selectClass =
@@ -58,6 +64,17 @@ export function DealFilters({
       >
         <option value="__all__">{t("filters.allCategories")}</option>
         {categories.map((item) => (
+          <option key={item} value={item}>{item}</option>
+        ))}
+      </select>
+
+      <select
+        value={source}
+        onChange={(e) => onSourceChange(e.target.value)}
+        className={selectClass}
+      >
+        <option value="__all__">{t("filters.allSources")}</option>
+        {sources.map((item) => (
           <option key={item} value={item}>{item}</option>
         ))}
       </select>

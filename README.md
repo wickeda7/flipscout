@@ -573,3 +573,42 @@ Real Home Depot, Lowe's, Walmart, Target, Costco, or Dollar General connectors
 are intentionally not fabricated. The next retailer-specific step should
 select an authorized API/data source and implement its adapter behind the
 shared `RetailerAdapter` contract.
+
+## Phase 3: ingestion observability and freshness
+
+FlipScout now exposes retailer-feed health separately from the deal API:
+
+```text
+GET /v1/ingestion/status
+GET /v1/ingestion/runs?limit=20
+```
+
+`/v1/ingestion/status` summarizes active/inactive deals, store counts, the most
+recent ingestion run, last-seen inventory time, and a normalized freshness
+state for every known source:
+
+```text
+fresh
+aging
+stale
+unknown
+```
+
+Configure the base freshness threshold with:
+
+```env
+INGESTION_STALE_AFTER_MINUTES=180
+```
+
+A source is `fresh` through that threshold, `aging` through twice the
+threshold, and `stale` afterward. A latest failed ingestion run is treated as
+stale immediately.
+
+The web dashboard displays source health above the deal KPIs, shows each deal's
+normalized source, and can filter the current deal set by data source. The
+shared API client also exposes ingestion status/history so the future React
+Native client can use the same backend observability data.
+
+This observability layer is intentionally retailer-neutral. It gives FlipScout
+a way to detect broken or delayed retailer feeds before a stale deal is treated
+as a current buying opportunity.

@@ -30,8 +30,13 @@ export function DealCard({ deal }: { deal: Deal }) {
     <article className="rounded-2xl border border-white/10 bg-neutral-950 p-5 transition-colors hover:border-white/20">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-            {deal.brand}
+          <div className="mb-1 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+            <span>{deal.brand}</span>
+            {deal.source && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[9px] tracking-[0.12em] text-neutral-500">
+                {deal.source}
+              </span>
+            )}
           </div>
           <h3 className="max-w-xl text-lg font-semibold leading-snug text-neutral-100">
             {deal.productName}

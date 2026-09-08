@@ -204,3 +204,35 @@ export interface RetailerIngestionResult {
   startedAt: string;
   completedAt: string;
 }
+
+
+export type IngestionRunStatus = "completed" | "failed";
+
+export interface IngestionRunSummary {
+  id: string;
+  source: RetailerSource;
+  status: IngestionRunStatus;
+  fetchedAt: string | null;
+  storesUpserted: number;
+  dealsUpserted: number;
+  dealsSkipped: number;
+  startedAt: string;
+  completedAt: string;
+  errorMessage: string | null;
+}
+
+export interface IngestionSourceStatus {
+  source: RetailerSource;
+  activeDeals: number;
+  inactiveDeals: number;
+  stores: number;
+  lastSeenAt: string | null;
+  latestRun: IngestionRunSummary | null;
+  freshness: "fresh" | "aging" | "stale" | "unknown";
+}
+
+export interface IngestionStatusResponse {
+  generatedAt: string;
+  staleAfterMinutes: number;
+  sources: IngestionSourceStatus[];
+}

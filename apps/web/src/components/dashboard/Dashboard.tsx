@@ -4,16 +4,23 @@ import { useMemo, useState } from "react";
 import { CircleDollarSign, Flame, PackageSearch, Store } from "lucide-react";
 import { DealCard } from "@/components/dashboard/DealCard";
 import { DealFilters } from "@/components/dashboard/DealFilters";
+import { DataFreshnessPanel } from "@/components/dashboard/DataFreshnessPanel";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { useDeals } from "@/hooks/use-deals";
+import { useIngestionStatus } from "@/hooks/use-ingestion-status";
 import { useI18n } from "@/components/i18n/I18nProvider";
 
 export function Dashboard() {
   const { deals, loading, error, refresh } = useDeals();
+  const {
+    status: ingestionStatus,
+    refresh: refreshIngestionStatus,
+  } = useIngestionStatus();
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [retailer, setRetailer] = useState("__all__");
   const [category, setCategory] = useState("__all__");
+  const [source, setSource] = useState("__all__");
 
   const filteredDeals = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -36,9 +43,17 @@ export function Dashboard() {
       const matchesCategory =
         category === "__all__" || deal.category === category;
 
-      return matchesQuery && matchesRetailer && matchesCategory;
+      const matchesSource =
+        source === "__all__" || deal.source === source;
+
+      return (
+        matchesQuery &&
+        matchesRetailer &&
+        matchesCategory &&
+        matchesSource
+      );
     });
-  }, [deals, query, retailer, category]);
+  }, [deals, query, retailer, category, source]);
 
   const totalProfit = filteredDeals.reduce(
     (sum, deal) => sum + deal.estimatedProfit,
@@ -76,13 +91,23 @@ export function Dashboard() {
 
           <button
             type="button"
-            onClick={refresh}
+            onClick={() => {
+              void refresh();
+              void refreshIngestionStatus();
+            }}
             disabled={loading}
             className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? t("dashboard.scanning") : t("dashboard.scan")}
           </button>
         </header>
+
+        {ingestionStatus && (
+          <DataFreshnessPanel
+            sources={ingestionStatus.sources}
+            staleAfterMinutes={ingestionStatus.staleAfterMinutes}
+          />
+        )}
 
         <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
@@ -122,11 +147,22 @@ export function Dashboard() {
             onRetailerChange={setRetailer}
             category={category}
             onCategoryChange={setCategory}
+            source={source}
+            onSourceChange={setSource}
             retailers={Array.from(
               new Set(deals.map((deal) => deal.retailer)),
             ).sort()}
             categories={Array.from(
               new Set(deals.map((deal) => deal.category)),
+            ).sort()}
+            sources={Array.from(
+              new Set(
+                deals
+                  .map((deal) => deal.source)
+                  .filter((value): value is NonNullable<typeof value> =>
+                    Boolean(value),
+                  ),
+              ),
             ).sort()}
           />
         </section>

@@ -6,6 +6,8 @@ import type {
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   LoginRequest,
+  IngestionRunSummary,
+  IngestionStatusResponse,
   OptimizeRouteRequest,
   OptimizeRouteResponse,
   RegisterRequest,
@@ -37,6 +39,7 @@ export class FlipScoutApiClient {
     q?: string;
     retailer?: string;
     category?: string;
+    source?: string;
     latitude?: number;
     longitude?: number;
   } = {}): Promise<Deal[]> {
@@ -44,11 +47,25 @@ export class FlipScoutApiClient {
     if (query.q) params.set("q", query.q);
     if (query.retailer) params.set("retailer", query.retailer);
     if (query.category) params.set("category", query.category);
+    if (query.source) params.set("source", query.source);
     if (query.latitude !== undefined) params.set("lat", String(query.latitude));
     if (query.longitude !== undefined) params.set("lng", String(query.longitude));
 
     const suffix = params.size ? `?${params.toString()}` : "";
     return this.request<Deal[]>(`/v1/deals${suffix}`);
+  }
+
+
+  async getIngestionStatus(): Promise<IngestionStatusResponse> {
+    return this.request<IngestionStatusResponse>("/v1/ingestion/status");
+  }
+
+  async listIngestionRuns(limit = 20): Promise<IngestionRunSummary[]> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    const response = await this.request<{ runs: IngestionRunSummary[] }>(
+      `/v1/ingestion/runs?${params.toString()}`,
+    );
+    return response.runs;
   }
 
   async getDeal(id: string): Promise<Deal | null> {

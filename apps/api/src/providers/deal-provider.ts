@@ -4,6 +4,7 @@ export interface DealQuery {
   q?: string;
   retailer?: string;
   category?: string;
+  source?: string;
   originLatitude?: number;
   originLongitude?: number;
 }

@@ -20,6 +20,7 @@ const {
   dealProvider,
   watchlistProvider,
   authProvider,
+  ingestionStatusProvider,
 } = createProviders();
 const emailProvider = createEmailProvider();
 const rateLimiter = new InMemoryRateLimiter();
@@ -572,10 +573,31 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (
+      request.method === "GET" &&
+      url.pathname === "/v1/ingestion/status"
+    ) {
+      const status = await ingestionStatusProvider.getStatus();
+      writeJson(response, 200, status);
+      return;
+    }
+
+    if (
+      request.method === "GET" &&
+      url.pathname === "/v1/ingestion/runs"
+    ) {
+      const rawLimit = Number(url.searchParams.get("limit") ?? 20);
+      const limit = Number.isFinite(rawLimit) ? rawLimit : 20;
+      const runs = await ingestionStatusProvider.listRuns(limit);
+      writeJson(response, 200, { runs });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/v1/deals") {
       const q = url.searchParams.get("q")?.trim() || undefined;
       const retailer = url.searchParams.get("retailer") || undefined;
       const category = url.searchParams.get("category") || undefined;
+      const source = url.searchParams.get("source") || undefined;
       const originLatitudeRaw = url.searchParams.get("lat");
       const originLongitudeRaw = url.searchParams.get("lng");
       const originLatitude =
@@ -597,6 +619,7 @@ const server = createServer(async (request, response) => {
           retailer && retailer !== "All stores" ? retailer : undefined,
         category:
           category && category !== "All categories" ? category : undefined,
+        source,
         originLatitude,
         originLongitude,
       });
