@@ -68,7 +68,10 @@ export class PostgresDealProvider implements DealProvider {
   constructor(private readonly pool: Pool) {}
 
   async listDeals(query: DealQuery = {}): Promise<Deal[]> {
-    const values: unknown[] = [];
+    const values: unknown[] = [
+      query.originLatitude ?? null,
+      query.originLongitude ?? null,
+    ];
     const where: string[] = [];
 
     if (query.q) {
@@ -105,7 +108,20 @@ export class PostgresDealProvider implements DealProvider {
         s.store_name,
         s.city,
         s.state,
-        0::double precision AS distance_miles,
+        CASE
+          WHEN $1::double precision IS NULL OR $2::double precision IS NULL
+          THEN 0::double precision
+          ELSE (
+            3958.7613 * 2 * ASIN(
+              SQRT(
+                POWER(SIN(RADIANS(s.latitude - $1::double precision) / 2), 2)
+                + COS(RADIANS($1::double precision))
+                * COS(RADIANS(s.latitude))
+                * POWER(SIN(RADIANS(s.longitude - $2::double precision) / 2), 2)
+              )
+            )
+          )
+        END AS distance_miles,
         s.latitude,
         s.longitude,
         d.retail_price,
@@ -122,7 +138,8 @@ export class PostgresDealProvider implements DealProvider {
         d.buy_score,
         d.status,
         d.category,
-        EXTRACT(EPOCH FROM (NOW() - d.updated_at)) / 60 AS updated_minutes_ago
+        EXTRACT(EPOCH FROM (NOW() - COALESCE(d.source_updated_at, d.updated_at))) / 60
+          AS updated_minutes_ago
       FROM deals d
       JOIN stores s ON s.id = d.store_id
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}

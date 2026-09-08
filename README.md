@@ -159,3 +159,33 @@ configured without exposing credentials.
 Distance is intentionally not persisted as a deal attribute in PostgreSQL yet:
 store distance is user/origin-relative. The current PostgreSQL provider returns
 0 miles until Phase 3 adds user-origin/geospatial distance calculation.
+
+### PostgreSQL demo setup
+
+After creating a PostgreSQL database, load the schema and demo data:
+
+```bash
+psql "$DATABASE_URL" -f database/schema.sql
+psql "$DATABASE_URL" -f database/seed.sql
+```
+
+Then configure:
+
+```env
+DATA_PROVIDER=postgres
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/flipscout
+```
+
+`GET /v1/deals` now accepts optional `lat` and `lng` query parameters. When both
+are provided, PostgreSQL calculates straight-line store distance in miles using
+the Haversine formula. This keeps distance relative to the caller instead of
+incorrectly storing it as a permanent property of a deal.
+
+Example:
+
+```text
+GET /v1/deals?lat=28.7589&lng=-81.3178
+```
+
+The shared API client supports the same origin through `latitude` and
+`longitude`, so the future React Native client can use the same API contract.

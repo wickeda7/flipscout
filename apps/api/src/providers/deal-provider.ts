@@ -4,6 +4,8 @@ export interface DealQuery {
   q?: string;
   retailer?: string;
   category?: string;
+  originLatitude?: number;
+  originLongitude?: number;
 }
 
 export interface DealProvider {

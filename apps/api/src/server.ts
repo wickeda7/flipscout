@@ -76,6 +76,20 @@ const server = createServer(async (request, response) => {
       const q = url.searchParams.get("q")?.trim() || undefined;
       const retailer = url.searchParams.get("retailer") || undefined;
       const category = url.searchParams.get("category") || undefined;
+      const originLatitudeRaw = url.searchParams.get("lat");
+      const originLongitudeRaw = url.searchParams.get("lng");
+      const originLatitude =
+        originLatitudeRaw !== null ? Number(originLatitudeRaw) : undefined;
+      const originLongitude =
+        originLongitudeRaw !== null ? Number(originLongitudeRaw) : undefined;
+
+      if (
+        (originLatitude !== undefined && !Number.isFinite(originLatitude)) ||
+        (originLongitude !== undefined && !Number.isFinite(originLongitude))
+      ) {
+        writeJson(response, 400, { error: "Invalid lat/lng query parameters." });
+        return;
+      }
 
       const deals = await dealProvider.listDeals({
         q,
@@ -83,6 +97,8 @@ const server = createServer(async (request, response) => {
           retailer && retailer !== "All stores" ? retailer : undefined,
         category:
           category && category !== "All categories" ? category : undefined,
+        originLatitude,
+        originLongitude,
       });
 
       writeJson(response, 200, deals);

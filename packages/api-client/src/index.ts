@@ -15,8 +15,22 @@ export class FlipScoutApiClient {
     this.baseUrl = baseUrl.replace(/\/$/, "");
   }
 
-  async listDeals(): Promise<Deal[]> {
-    return this.request<Deal[]>("/v1/deals");
+  async listDeals(query: {
+    q?: string;
+    retailer?: string;
+    category?: string;
+    latitude?: number;
+    longitude?: number;
+  } = {}): Promise<Deal[]> {
+    const params = new URLSearchParams();
+    if (query.q) params.set("q", query.q);
+    if (query.retailer) params.set("retailer", query.retailer);
+    if (query.category) params.set("category", query.category);
+    if (query.latitude !== undefined) params.set("lat", String(query.latitude));
+    if (query.longitude !== undefined) params.set("lng", String(query.longitude));
+
+    const suffix = params.size ? `?${params.toString()}` : "";
+    return this.request<Deal[]>(`/v1/deals${suffix}`);
   }
 
   async getDeal(id: string): Promise<Deal | null> {
