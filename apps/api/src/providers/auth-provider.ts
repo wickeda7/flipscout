@@ -28,4 +28,6 @@ export interface AuthProvider {
     currentPassword: string,
     newPassword: string,
   ): Promise<void>;
+  createPasswordReset(email: string): Promise<string | null>;
+  resetPassword(token: string, newPassword: string): Promise<void>;
 }

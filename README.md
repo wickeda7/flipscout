@@ -331,3 +331,38 @@ user to `/login`.
 the password. Profile updates currently support the display name; email changes
 are intentionally not included yet because production email changes should be
 paired with verification.
+
+## Password recovery
+
+FlipScout now includes:
+
+```text
+/forgot-password
+/reset-password?token=...
+```
+
+Shared API endpoints:
+
+```text
+POST /v1/auth/forgot-password
+POST /v1/auth/reset-password
+```
+
+Reset tokens are random 256-bit values. PostgreSQL stores only a SHA-256 hash
+of the token in `password_reset_tokens`. Tokens expire after
+`PASSWORD_RESET_MINUTES` (30 minutes by default), are single-use, and a
+successful reset revokes every active session for that user.
+
+For privacy, the forgot-password endpoint always returns success for a valid
+email format, even when no account exists.
+
+Until an email provider is connected, non-production API responses include a
+`developmentResetUrl` only when the requested account exists. This is intended
+solely for local testing. Production responses never expose the reset token.
+
+After upgrading, apply the new table:
+
+```bash
+yarn db:bootstrap
+yarn db:check
+```

@@ -3,10 +3,13 @@ import type {
   AuthUser,
   ChangePasswordRequest,
   Deal,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
   LoginRequest,
   OptimizeRouteRequest,
   OptimizeRouteResponse,
   RegisterRequest,
+  ResetPasswordRequest,
   UpdateProfileRequest,
   WatchlistResponse,
 } from "@flipscout/types";
@@ -72,6 +75,25 @@ export class FlipScoutApiClient {
 
   async login(input: LoginRequest): Promise<AuthResponse> {
     return this.request<AuthResponse>("/v1/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+  }
+
+
+  async forgotPassword(
+    input: ForgotPasswordRequest,
+  ): Promise<ForgotPasswordResponse> {
+    return this.request<ForgotPasswordResponse>("/v1/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+  }
+
+  async resetPassword(input: ResetPasswordRequest): Promise<void> {
+    await this.request<{ ok: true }>("/v1/auth/reset-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),

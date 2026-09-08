@@ -8,8 +8,10 @@ import type {
 } from "@flipscout/types";
 import {
   createAccessToken,
+  createPasswordResetToken,
   hashAccessToken,
   hashPassword,
+  hashPasswordResetToken,
   verifyPassword,
 } from "../auth-crypto.js";
 import { AuthError, type AuthProvider } from "./auth-provider.js";
@@ -173,6 +175,93 @@ export class PostgresAuthProvider implements AuthProvider {
     );
 
     await this.logoutAll(userId);
+  }
+
+
+  async createPasswordReset(email: string): Promise<string | null> {
+    const result = await this.pool.query<{ id: string }>(
+      "SELECT id::text FROM users WHERE LOWER(email) = $1 LIMIT 1",
+      [email.trim().toLowerCase()],
+    );
+
+    const user = result.rows[0];
+    if (!user) return null;
+
+    const token = createPasswordResetToken();
+    const tokenHash = hashPasswordResetToken(token);
+    const minutes = Number(process.env.PASSWORD_RESET_MINUTES ?? 30);
+
+    await this.pool.query(
+      "DELETE FROM password_reset_tokens WHERE user_id = $1",
+      [user.id],
+    );
+
+    await this.pool.query(
+      `
+      INSERT INTO password_reset_tokens (token_hash, user_id, expires_at)
+      VALUES ($1, $2, NOW() + ($3::text || ' minutes')::interval)
+      `,
+      [tokenHash, user.id, minutes],
+    );
+
+    return token;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const tokenHash = hashPasswordResetToken(token);
+    const client = await this.pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const result = await client.query<{ user_id: string }>(
+        `
+        SELECT user_id::text
+        FROM password_reset_tokens
+        WHERE token_hash = $1
+          AND expires_at > NOW()
+        FOR UPDATE
+        `,
+        [tokenHash],
+      );
+
+      const reset = result.rows[0];
+
+      if (!reset) {
+        await client.query("ROLLBACK");
+        throw new AuthError(
+          "Password reset link is invalid or expired.",
+          400,
+          "INVALID_RESET_TOKEN",
+        );
+      }
+
+      await client.query(
+        "UPDATE users SET password_hash = $2 WHERE id = $1",
+        [reset.user_id, hashPassword(newPassword)],
+      );
+
+      await client.query(
+        "DELETE FROM password_reset_tokens WHERE user_id = $1",
+        [reset.user_id],
+      );
+
+      await client.query(
+        "DELETE FROM auth_sessions WHERE user_id = $1",
+        [reset.user_id],
+      );
+
+      await client.query("COMMIT");
+    } catch (error) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        // Preserve the original error.
+      }
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   private async createSession(user: AuthUser): Promise<AuthResponse> {

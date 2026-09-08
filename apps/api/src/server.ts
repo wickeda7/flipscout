@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createServer } from "node:http";
 import { URL } from "node:url";
-import type { ChangePasswordRequest, LoginRequest, OptimizeRouteRequest, RegisterRequest, UpdateProfileRequest } from "@flipscout/types";
+import type { ChangePasswordRequest, ForgotPasswordRequest, LoginRequest, OptimizeRouteRequest, RegisterRequest, ResetPasswordRequest, UpdateProfileRequest } from "@flipscout/types";
 import { createProviders } from "./providers/index.js";
 import { AuthError } from "./providers/auth-provider.js";
 import {
@@ -163,6 +163,66 @@ const server = createServer(async (request, response) => {
       });
 
       writeJson(response, 201, auth);
+      return;
+    }
+
+
+    if (request.method === "POST" && url.pathname === "/v1/auth/forgot-password") {
+      const body = await readJson<ForgotPasswordRequest>(request);
+      const email = body.email?.trim() ?? "";
+
+      if (!validateEmail(email)) {
+        writeJson(response, 400, {
+          error: "Enter a valid email address.",
+          code: "INVALID_EMAIL",
+        });
+        return;
+      }
+
+      const token = await authProvider.createPasswordReset(email);
+      const responseBody: {
+        ok: true;
+        developmentResetUrl?: string;
+      } = { ok: true };
+
+      if (
+        token &&
+        NODE_ENV !== "production"
+      ) {
+        const webAppUrl =
+          process.env.WEB_APP_URL ?? "http://localhost:3000";
+        responseBody.developmentResetUrl =
+          `${webAppUrl.replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(token)}`;
+      }
+
+      // Always return success to avoid revealing whether an account exists.
+      writeJson(response, 200, responseBody);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/auth/reset-password") {
+      const body = await readJson<ResetPasswordRequest>(request);
+      const token = body.token?.trim() ?? "";
+      const newPassword = body.newPassword ?? "";
+
+      if (!token) {
+        writeJson(response, 400, {
+          error: "Password reset token is required.",
+          code: "MISSING_RESET_TOKEN",
+        });
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        writeJson(response, 400, {
+          error: "New password must be at least 8 characters.",
+          code: "WEAK_PASSWORD",
+        });
+        return;
+      }
+
+      await authProvider.resetPassword(token, newPassword);
+      writeJson(response, 200, { ok: true });
       return;
     }
 

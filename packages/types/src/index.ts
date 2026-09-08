@@ -98,3 +98,22 @@ export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
 }
+
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  ok: true;
+  /**
+   * Development-only reset URL. Production deployments should deliver this
+   * through the configured email provider and omit it from the API response.
+   */
+  developmentResetUrl?: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}

@@ -7,8 +7,10 @@ import type {
 } from "@flipscout/types";
 import {
   createAccessToken,
+  createPasswordResetToken,
   hashAccessToken,
   hashPassword,
+  hashPasswordResetToken,
   verifyPassword,
 } from "../auth-crypto.js";
 import { AuthError, type AuthProvider } from "./auth-provider.js";
@@ -19,6 +21,7 @@ export class MemoryAuthProvider implements AuthProvider {
   private readonly usersByEmail = new Map<string, MemoryUser>();
   private readonly usersById = new Map<string, MemoryUser>();
   private readonly sessions = new Map<string, string>();
+  private readonly passwordResets = new Map<string, { userId: string; expiresAt: number }>();
 
   async register(input: RegisterRequest): Promise<AuthResponse> {
     const email = input.email.trim().toLowerCase();
@@ -114,6 +117,50 @@ export class MemoryAuthProvider implements AuthProvider {
     this.usersById.set(userId, user);
     this.usersByEmail.set(user.email, user);
     await this.logoutAll(userId);
+  }
+
+
+  async createPasswordReset(email: string): Promise<string | null> {
+    const user = this.usersByEmail.get(email.trim().toLowerCase());
+    if (!user) return null;
+
+    const token = createPasswordResetToken();
+    this.passwordResets.set(hashPasswordResetToken(token), {
+      userId: user.id,
+      expiresAt: Date.now() + 30 * 60 * 1000,
+    });
+
+    return token;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const tokenHash = hashPasswordResetToken(token);
+    const reset = this.passwordResets.get(tokenHash);
+
+    if (!reset || reset.expiresAt <= Date.now()) {
+      this.passwordResets.delete(tokenHash);
+      throw new AuthError(
+        "Password reset link is invalid or expired.",
+        400,
+        "INVALID_RESET_TOKEN",
+      );
+    }
+
+    const user = this.usersById.get(reset.userId);
+    if (!user) {
+      this.passwordResets.delete(tokenHash);
+      throw new AuthError(
+        "Password reset link is invalid or expired.",
+        400,
+        "INVALID_RESET_TOKEN",
+      );
+    }
+
+    user.passwordHash = hashPassword(newPassword);
+    this.usersById.set(user.id, user);
+    this.usersByEmail.set(user.email, user);
+    this.passwordResets.delete(tokenHash);
+    await this.logoutAll(user.id);
   }
 
   private createSession(user: MemoryUser): AuthResponse {

@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const resetSuccessful = searchParams.get("reset") === "success";
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,6 +53,12 @@ export default function LoginPage() {
       </div>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-5">
+        {resetSuccessful && (
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+            {t("auth.resetSuccess")}
+          </div>
+        )}
+
         {error && (
           <div
             role="alert"
@@ -110,6 +117,15 @@ export default function LoginPage() {
             </button>
           </span>
         </label>
+
+        <div className="-mt-1 text-right">
+          <Link
+            href="/forgot-password"
+            className="text-xs font-medium text-neutral-500 transition hover:text-white"
+          >
+            {t("auth.forgotPassword")}
+          </Link>
+        </div>
 
         <button
           type="submit"

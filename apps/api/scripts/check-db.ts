@@ -29,6 +29,7 @@ async function run() {
       AND table_name IN (
         'users',
         'auth_sessions',
+        'password_reset_tokens',
         'user_preferences',
         'stores',
         'deals',
@@ -41,6 +42,7 @@ async function run() {
   const required = [
     "users",
     "auth_sessions",
+    "password_reset_tokens",
     "user_preferences",
     "stores",
     "deals",
