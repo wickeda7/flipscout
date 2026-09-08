@@ -2,11 +2,13 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2, ExternalLink, MailCheck, RefreshCw } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { flipScoutApi } from "@/lib/api";
+import { safeInternalPath, translatedApiError } from "@/lib/auth-ui";
 
 export default function VerifyEmailPage() {
   return (
@@ -19,6 +21,8 @@ export default function VerifyEmailPage() {
 function VerifyEmailContent() {
   const { user, refreshUser } = useAuth();
   const { t } = useI18n();
+  const searchParams = useSearchParams();
+  const next = safeInternalPath(searchParams.get("next"), "/account");
   const [status, setStatus] = useState<
     "idle" | "verifying" | "verified" | "error"
   >("idle");
@@ -62,20 +66,26 @@ function VerifyEmailContent() {
         } catch {
           // Verification succeeded even if the local account refresh fails.
         }
-        window.history.replaceState({}, "", "/verify-email");
+        window.history.replaceState(
+          {},
+          "",
+          next === "/account"
+            ? "/verify-email"
+            : `/verify-email?next=${encodeURIComponent(next)}`,
+        );
       })
       .catch((cause) => {
         if (cancelled) return;
         setStatus("error");
         setMessage(
-          cause instanceof Error ? cause.message : t("auth.verifyFailed"),
+          translatedApiError(cause, t, "auth.verifyFailed"),
         );
       });
 
     return () => {
       cancelled = true;
     };
-  }, [refreshUser, t, user?.emailVerified]);
+  }, [next, refreshUser, t, user?.emailVerified]);
 
   async function resend() {
     setResending(true);
@@ -98,9 +108,11 @@ function VerifyEmailContent() {
       );
     } catch (cause) {
       setMessage(
-        cause instanceof Error
-          ? cause.message
-          : t("auth.verificationResendFailed"),
+        translatedApiError(
+          cause,
+          t,
+          "auth.verificationResendFailed",
+        ),
       );
     } finally {
       setResending(false);
@@ -183,10 +195,20 @@ function VerifyEmailContent() {
         )}
 
         <Link
-          href={user ? "/account" : "/login"}
+          href={
+            user
+              ? status === "verified"
+                ? next
+                : "/account"
+              : "/login"
+          }
           className="block w-full rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white"
         >
-          {user ? t("auth.goToAccount") : t("auth.backToLogin")}
+          {user
+            ? status === "verified" && next !== "/account"
+              ? t("auth.continue")
+              : t("auth.goToAccount")
+            : t("auth.backToLogin")}
         </Link>
       </div>
     </AuthShell>

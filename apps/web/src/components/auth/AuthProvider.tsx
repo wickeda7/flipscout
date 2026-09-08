@@ -39,27 +39,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = window.localStorage.getItem(TOKEN_KEY);
+    let cancelled = false;
 
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    async function restoreSession(token: string | null) {
+      if (!token) {
+        flipScoutApi.setAccessToken(null);
+        if (!cancelled) {
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
 
-    flipScoutApi.setAccessToken(token);
+      flipScoutApi.setAccessToken(token);
 
-    flipScoutApi
-      .me()
-      .then(({ user: currentUser }) => {
-        setUser(currentUser);
-      })
-      .catch(() => {
+      try {
+        const { user: currentUser } = await flipScoutApi.me();
+        if (!cancelled) setUser(currentUser);
+      } catch {
         window.localStorage.removeItem(TOKEN_KEY);
         flipScoutApi.setAccessToken(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void restoreSession(window.localStorage.getItem(TOKEN_KEY));
+
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== TOKEN_KEY) return;
+      setLoading(true);
+      void restoreSession(event.newValue);
+      window.dispatchEvent(new Event("flipscout-watchlist-change"));
+    }
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   const persistSession = useCallback(

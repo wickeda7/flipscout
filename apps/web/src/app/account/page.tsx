@@ -1,9 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Eye,
+  EyeOff,
   KeyRound,
   LogOut,
   Mail,
@@ -15,6 +18,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { translatedApiError } from "@/lib/auth-ui";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -63,9 +67,7 @@ export default function AccountPage() {
       setProfileMessage(t("account.profileSaved"));
     } catch (cause) {
       setProfileMessage(
-        cause instanceof Error
-          ? cause.message
-          : t("account.profileSaveFailed"),
+        translatedApiError(cause, t, "account.profileSaveFailed"),
       );
     } finally {
       setProfileSaving(false);
@@ -91,9 +93,7 @@ export default function AccountPage() {
       router.replace("/login");
     } catch (cause) {
       setPasswordError(
-        cause instanceof Error
-          ? cause.message
-          : t("account.passwordChangeFailed"),
+        translatedApiError(cause, t, "account.passwordChangeFailed"),
       );
     } finally {
       setPasswordSaving(false);
@@ -234,18 +234,24 @@ export default function AccountPage() {
                     value={currentPassword}
                     onChange={setCurrentPassword}
                     autoComplete="current-password"
+                    showLabel={t("auth.showPassword")}
+                    hideLabel={t("auth.hidePassword")}
                   />
                   <PasswordField
                     label={t("account.newPassword")}
                     value={newPassword}
                     onChange={setNewPassword}
                     autoComplete="new-password"
+                    showLabel={t("auth.showPassword")}
+                    hideLabel={t("auth.hidePassword")}
                   />
                   <PasswordField
                     label={t("auth.confirmPassword")}
                     value={confirmPassword}
                     onChange={setConfirmPassword}
                     autoComplete="new-password"
+                    showLabel={t("auth.showPassword")}
+                    hideLabel={t("auth.hidePassword")}
                   />
 
                   {passwordError && (
@@ -308,26 +314,42 @@ function PasswordField({
   value,
   onChange,
   autoComplete,
+  showLabel,
+  hideLabel,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   autoComplete: string;
+  showLabel: string;
+  hideLabel: string;
 }) {
+  const [visible, setVisible] = useState(false);
+
   return (
     <label className="block">
       <span className="mb-2 block text-sm text-neutral-300">
         {label}
       </span>
-      <input
-        type="password"
-        required
-        minLength={8}
-        value={value}
-        autoComplete={autoComplete}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-500/40"
-      />
+      <span className="relative block">
+        <input
+          type={visible ? "text" : "password"}
+          required
+          minLength={8}
+          value={value}
+          autoComplete={autoComplete}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 pr-11 text-sm text-white outline-none transition focus:border-emerald-500/40"
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((current) => !current)}
+          aria-label={visible ? hideLabel : showLabel}
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-neutral-600 transition hover:text-white"
+        >
+          {visible ? <EyeOff size={17} /> : <Eye size={17} />}
+        </button>
+      </span>
     </label>
   );
 }

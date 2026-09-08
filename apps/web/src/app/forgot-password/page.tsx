@@ -1,11 +1,13 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
 import { Mail, ArrowLeft, ExternalLink } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { flipScoutApi } from "@/lib/api";
+import { translatedApiError } from "@/lib/auth-ui";
 
 export default function ForgotPasswordPage() {
   const { t } = useI18n();
@@ -28,9 +30,7 @@ export default function ForgotPasswordPage() {
       setDevelopmentResetUrl(result.developmentResetUrl ?? null);
     } catch (cause) {
       setError(
-        cause instanceof Error
-          ? cause.message
-          : t("auth.recoveryRequestFailed"),
+        translatedApiError(cause, t, "auth.recoveryRequestFailed"),
       );
     } finally {
       setSubmitting(false);

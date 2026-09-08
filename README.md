@@ -487,3 +487,25 @@ Invalid values fail explicitly rather than producing broken expiration times.
 
 API JSON responses also include `Cache-Control: no-store` and
 `X-Content-Type-Options: nosniff`.
+
+## Auth UX and cross-tab synchronization
+
+The web client now translates known API authentication error codes instead of
+showing backend English messages directly. This keeps login, registration,
+password recovery/reset, email verification, and account security errors
+consistent in English and Vietnamese.
+
+Protected-route loading text and password visibility accessibility labels are
+also translated. Password fields on registration confirmation, password reset,
+and account password changes now have explicit show/hide controls.
+
+Post-login return paths are validated as same-origin application paths. Values
+that are protocol-relative (`//...`), contain backslashes/control characters,
+or resolve outside the FlipScout origin are rejected. A protected-page `next`
+value is also preserved through registration and email verification.
+
+Authentication state now listens for browser `storage` events. Logging in,
+logging out, changing a password, or losing a session in one tab is reflected
+in other FlipScout tabs without a manual refresh. This synchronization is a web
+client behavior; the shared API contract remains unchanged for the future
+React Native client.

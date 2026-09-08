@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 export function RequireAuth({
   children,
@@ -10,6 +11,7 @@ export function RequireAuth({
   children: React.ReactNode;
 }) {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -23,7 +25,7 @@ export function RequireAuth({
   if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-sm text-neutral-500">
-        Loading account…
+        {t("auth.loadingAccount")}
       </div>
     );
   }

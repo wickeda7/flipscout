@@ -1,12 +1,14 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { safeInternalPath, translatedApiError } from "@/lib/auth-ui";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,12 +29,9 @@ export default function LoginPage() {
 
     try {
       await login({ email, password });
-      const next = searchParams.get("next");
-      router.replace(next && next.startsWith("/") ? next : "/");
+      router.replace(safeInternalPath(searchParams.get("next")));
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Unable to log in.",
-      );
+      setError(translatedApiError(cause, t, "auth.loginFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -110,7 +109,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-neutral-600 transition hover:text-white"
             >
               {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
@@ -140,7 +139,13 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-sm text-neutral-500">
         {t("auth.noAccount")}{" "}
         <Link
-          href="/register"
+          href={
+            searchParams.get("next")
+              ? `/register?next=${encodeURIComponent(
+                  safeInternalPath(searchParams.get("next")),
+                )}`
+              : "/register"
+          }
           className="font-semibold text-white transition hover:text-emerald-300"
         >
           {t("auth.register")}

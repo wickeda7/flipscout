@@ -1,12 +1,14 @@
 "use client";
 
-import { FormEvent, Suspense, useState } from "react";
+import { Suspense, useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, LockKeyhole } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { flipScoutApi } from "@/lib/api";
+import { translatedApiError } from "@/lib/auth-ui";
 
 export default function ResetPasswordPage() {
   return (
@@ -46,11 +48,7 @@ function ResetPasswordContent() {
       await flipScoutApi.resetPassword({ token, newPassword });
       router.replace("/login?reset=success");
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : t("auth.resetFailed"),
-      );
+      setError(translatedApiError(cause, t, "auth.resetFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -84,12 +82,16 @@ function ResetPasswordContent() {
           label={t("account.newPassword")}
           value={newPassword}
           onChange={setNewPassword}
+          showLabel={t("auth.showPassword")}
+          hideLabel={t("auth.hidePassword")}
         />
 
         <PasswordField
           label={t("auth.confirmPassword")}
           value={confirmPassword}
           onChange={setConfirmPassword}
+          showLabel={t("auth.showPassword")}
+          hideLabel={t("auth.hidePassword")}
         />
 
         <button
@@ -118,11 +120,17 @@ function PasswordField({
   label,
   value,
   onChange,
+  showLabel,
+  hideLabel,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  showLabel: string;
+  hideLabel: string;
 }) {
+  const [visible, setVisible] = useState(false);
+
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-medium text-neutral-300">
@@ -134,14 +142,22 @@ function PasswordField({
           className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-600"
         />
         <input
-          type="password"
+          type={visible ? "text" : "password"}
           autoComplete="new-password"
           required
           minLength={8}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-white/[0.025] py-3 pl-10 pr-4 text-sm text-white outline-none transition focus:border-emerald-500/40 focus:bg-white/[0.04]"
+          className="w-full rounded-xl border border-white/10 bg-white/[0.025] py-3 pl-10 pr-11 text-sm text-white outline-none transition focus:border-emerald-500/40 focus:bg-white/[0.04]"
         />
+        <button
+          type="button"
+          onClick={() => setVisible((current) => !current)}
+          aria-label={visible ? hideLabel : showLabel}
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-neutral-600 transition hover:text-white"
+        >
+          {visible ? <EyeOff size={17} /> : <Eye size={17} />}
+        </button>
       </span>
     </label>
   );

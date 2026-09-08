@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   Eye,
@@ -14,9 +15,11 @@ import {
 import { AuthShell } from "@/components/auth/AuthShell";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { safeInternalPath, translatedApiError } from "@/lib/auth-ui";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { register } = useAuth();
   const { t } = useI18n();
   const [displayName, setDisplayName] = useState("");
@@ -24,6 +27,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,11 +56,14 @@ export default function RegisterPage() {
         );
       }
 
-      router.replace("/verify-email");
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Unable to create account.",
+      const next = safeInternalPath(searchParams.get("next"));
+      router.replace(
+        next === "/"
+          ? "/verify-email"
+          : `/verify-email?next=${encodeURIComponent(next)}`,
       );
+    } catch (cause) {
+      setError(translatedApiError(cause, t, "auth.registerFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -150,7 +157,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-neutral-600 transition hover:text-white"
             >
               {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
@@ -168,15 +175,33 @@ export default function RegisterPage() {
               className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-600"
             />
             <input
-              type={showPassword ? "text" : "password"}
+              type={showConfirmPassword ? "text" : "password"}
               autoComplete="new-password"
               required
               minLength={8}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder={t("auth.confirmPasswordPlaceholder")}
-              className="w-full rounded-xl border border-white/10 bg-white/[0.025] py-3 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-neutral-700 focus:border-emerald-500/40 focus:bg-white/[0.04]"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.025] py-3 pl-10 pr-11 text-sm text-white outline-none transition placeholder:text-neutral-700 focus:border-emerald-500/40 focus:bg-white/[0.04]"
             />
+            <button
+              type="button"
+              onClick={() =>
+                setShowConfirmPassword((value) => !value)
+              }
+              aria-label={
+                showConfirmPassword
+                  ? t("auth.hidePassword")
+                  : t("auth.showPassword")
+              }
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-neutral-600 transition hover:text-white"
+            >
+              {showConfirmPassword ? (
+                <EyeOff size={17} />
+              ) : (
+                <Eye size={17} />
+              )}
+            </button>
           </span>
         </label>
 
@@ -197,7 +222,13 @@ export default function RegisterPage() {
       <p className="mt-6 text-center text-sm text-neutral-500">
         {t("auth.hasAccount")}{" "}
         <Link
-          href="/login"
+          href={
+            searchParams.get("next")
+              ? `/login?next=${encodeURIComponent(
+                  safeInternalPath(searchParams.get("next")),
+                )}`
+              : "/login"
+          }
           className="font-semibold text-white transition hover:text-emerald-300"
         >
           {t("auth.login")}
