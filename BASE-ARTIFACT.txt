@@ -1,0 +1,2 @@
+Base: flipscout-phase3-observability.zip
+SHA-256: 457916061f14ba34848d3b7f865a2bcd86e50474f35d389cf4c7e0c84cc30ba7

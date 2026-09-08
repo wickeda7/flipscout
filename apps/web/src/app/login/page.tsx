@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+
 import { useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
@@ -10,7 +12,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { safeInternalPath, translatedApiError } from "@/lib/auth-ui";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -153,4 +155,8 @@ export default function LoginPage() {
       </p>
     </AuthShell>
   );
+}
+
+export default function LoginPage() {
+  return <Suspense fallback={null}><LoginPageContent /></Suspense>;
 }

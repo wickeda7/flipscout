@@ -151,7 +151,8 @@ export type RetailerSource =
   | "target"
   | "costco"
   | "dollar-general"
-  | "mock";
+  | "mock"
+  | (string & {});
 
 export interface RetailerSourceStore {
   source: RetailerSource;

@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+
 import { useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
@@ -17,7 +19,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { safeInternalPath, translatedApiError } from "@/lib/auth-ui";
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { register } = useAuth();
@@ -236,4 +238,8 @@ export default function RegisterPage() {
       </p>
     </AuthShell>
   );
+}
+
+export default function RegisterPage() {
+  return <Suspense fallback={null}><RegisterPageContent /></Suspense>;
 }

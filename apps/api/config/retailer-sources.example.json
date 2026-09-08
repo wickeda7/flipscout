@@ -1,0 +1,105 @@
+[
+  {
+    "source": "authorized-feed",
+    "enabled": false,
+    "fullSnapshot": false,
+    "allowEmptySnapshot": false,
+    "intervalMinutes": 60,
+    "timeoutMs": 15000,
+    "retries": 3,
+    "maxPages": 100,
+    "maxRecords": 100000,
+    "maxResponseBytes": 5000000,
+    "auth": {
+      "header": "Authorization",
+      "env": "RETAILER_FEED_TOKEN",
+      "prefix": "Bearer "
+    },
+    "stores": {
+      "url": "https://feed.example.invalid/stores",
+      "itemsPath": "items",
+      "pagination": {
+        "mode": "cursor",
+        "param": "cursor",
+        "nextPath": "nextCursor"
+      },
+      "mapping": {
+        "externalStoreId": {
+          "path": "externalStoreId",
+          "type": "string"
+        },
+        "retailer": {
+          "path": "retailer",
+          "type": "string"
+        },
+        "storeName": {
+          "path": "storeName",
+          "type": "string"
+        },
+        "city": {
+          "path": "city",
+          "type": "string"
+        },
+        "state": {
+          "path": "state",
+          "type": "string"
+        },
+        "latitude": {
+          "path": "latitude",
+          "type": "number"
+        },
+        "longitude": {
+          "path": "longitude",
+          "type": "number"
+        }
+      }
+    },
+    "deals": {
+      "url": "https://feed.example.invalid/deals",
+      "itemsPath": "items",
+      "pagination": {
+        "mode": "cursor",
+        "param": "cursor",
+        "nextPath": "nextCursor"
+      },
+      "mapping": {
+        "externalDealId": {
+          "path": "externalDealId",
+          "type": "string"
+        },
+        "externalStoreId": {
+          "path": "externalStoreId",
+          "type": "string"
+        },
+        "productName": {
+          "path": "productName",
+          "type": "string"
+        },
+        "brand": {
+          "path": "brand",
+          "type": "string"
+        },
+        "category": {
+          "path": "category",
+          "type": "string"
+        },
+        "retailPrice": {
+          "path": "retailPrice",
+          "type": "number"
+        },
+        "clearancePrice": {
+          "path": "clearancePrice",
+          "type": "number"
+        },
+        "inventory": {
+          "path": "inventory",
+          "type": "number"
+        },
+        "sourceUpdatedAt": {
+          "path": "sourceUpdatedAt",
+          "type": "date"
+        }
+      }
+    }
+  }
+]

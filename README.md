@@ -1,3 +1,7 @@
+# Latest Phase 3 step
+
+See [PHASE3-CONNECTORS.md](PHASE3-CONNECTORS.md) for the configurable HTTP/JSON connector, current setup/test commands, scheduling, and snapshot guarantees. See [VALIDATION.md](VALIDATION.md) for executed checks. The sections below describe prior milestones.
+
 # FlipScout shared platform foundation
 
 This build is the architecture checkpoint before Phase 3.

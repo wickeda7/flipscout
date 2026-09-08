@@ -7,13 +7,17 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "npm run dev -w @flipscout/web",
-    "dev:api": "npm run dev -w @flipscout/api",
-    "build:web": "npm run build -w @flipscout/web",
-    "typecheck:api": "npm run typecheck -w @flipscout/api",
+    "dev:web": "yarn workspace @flipscout/web dev",
+    "dev:api": "yarn workspace @flipscout/api dev",
+    "build:web": "yarn workspace @flipscout/web build",
+    "typecheck:api": "yarn workspace @flipscout/api typecheck",
     "db:bootstrap": "yarn workspace @flipscout/api db:bootstrap",
     "db:check": "yarn workspace @flipscout/api db:check",
-    "ingest:retailer": "yarn workspace @flipscout/api ingest:retailer"
+    "ingest:retailer": "yarn workspace @flipscout/api ingest:retailer",
+    "test:connectors": "yarn workspace @flipscout/api test:connectors",
+    "ingest:check": "yarn workspace @flipscout/api ingest:check",
+    "ingest:due": "yarn workspace @flipscout/api ingest:due",
+    "test:postgres": "yarn workspace @flipscout/api test:postgres"
   },
   "engines": {
     "node": ">=20.9.0"

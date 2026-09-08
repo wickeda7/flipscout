@@ -1,3 +1,4 @@
+import { validateBatch } from "./validation.js";
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import type {
@@ -16,6 +17,7 @@ export async function ingestRetailerBatch(
   pool: Pool,
   batch: RetailerIngestionBatch,
 ): Promise<RetailerIngestionResult> {
+  validateBatch(batch);
   const startedAt = new Date().toISOString();
   const client = await pool.connect();
 
@@ -36,24 +38,8 @@ export async function ingestRetailerBatch(
     }
 
     for (const deal of batch.deals) {
-      try {
-        validateDeal(deal);
-
-        const storeId = storeIds.get(deal.externalStoreId);
-        if (!storeId) {
-          dealsSkipped += 1;
-          continue;
-        }
-
-        await upsertDeal(client, storeId, deal);
-        dealsUpserted += 1;
-      } catch (error) {
-        dealsSkipped += 1;
-        console.warn(
-          `Skipping ${batch.source} deal ${deal.externalDealId}:`,
-          error instanceof Error ? error.message : error,
-        );
-      }
+      await upsertDeal(client, storeIds.get(deal.externalStoreId)!, deal);
+      dealsUpserted += 1;
     }
 
     if (batch.fullSnapshot) {
@@ -64,9 +50,12 @@ export async function ingestRetailerBatch(
             updated_at = NOW()
         WHERE source = $1
           AND is_active = TRUE
-          AND (last_seen_at IS NULL OR last_seen_at < $2)
+          AND NOT EXISTS (
+            SELECT 1 FROM jsonb_to_recordset($2::jsonb) AS seen(store_id text, external_id text)
+            WHERE seen.store_id = deals.store_id::text AND seen.external_id = deals.external_id
+          )
         `,
-        [batch.source, startedAt],
+        [batch.source, JSON.stringify(batch.deals.map(d => ({ store_id: storeIds.get(d.externalStoreId), external_id: d.externalDealId })))],
       );
     }
 
@@ -129,7 +118,7 @@ export async function ingestRetailerBatch(
           dealsUpserted,
           dealsSkipped,
           startedAt,
-          error instanceof Error ? error.message : "Unknown ingestion error",
+          "PERSISTENCE_FAILED",
         ],
       )
       .catch(() => undefined);
@@ -353,37 +342,5 @@ function validateStore(store: RetailerSourceStore) {
     store.longitude > 180
   ) {
     throw new Error("Store coordinates are invalid.");
-  }
-}
-
-function validateDeal(deal: RetailerSourceDeal) {
-  if (!deal.externalDealId.trim()) {
-    throw new Error("externalDealId is required.");
-  }
-
-  if (!deal.externalStoreId.trim()) {
-    throw new Error("externalStoreId is required.");
-  }
-
-  if (!deal.productName.trim()) {
-    throw new Error("productName is required.");
-  }
-
-  if (
-    !Number.isFinite(deal.retailPrice) ||
-    !Number.isFinite(deal.clearancePrice) ||
-    deal.retailPrice <= 0 ||
-    deal.clearancePrice < 0
-  ) {
-    throw new Error("Deal prices are invalid.");
-  }
-
-  if (!Number.isInteger(deal.inventory) || deal.inventory < 0) {
-    throw new Error("Deal inventory must be a non-negative integer.");
-  }
-
-  const updatedAt = Date.parse(deal.sourceUpdatedAt);
-  if (!Number.isFinite(updatedAt)) {
-    throw new Error("sourceUpdatedAt must be an ISO-compatible date.");
   }
 }

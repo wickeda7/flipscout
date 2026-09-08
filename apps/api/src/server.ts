@@ -189,7 +189,7 @@ const server = createServer(async (request, response) => {
     const url = new URL(request.url, `http://${request.headers.host}`);
 
     if (request.method === "GET" && url.pathname === "/health") {
-      let dataProviderHealth = { ok: true, detail: dataProviderName };
+      let dataProviderHealth: { ok: boolean; detail?: string } = { ok: true, detail: dataProviderName };
       try {
         dataProviderHealth =
           (await dealProvider.health?.()) ?? dataProviderHealth;
