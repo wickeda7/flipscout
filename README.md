@@ -402,3 +402,45 @@ yarn install
 yarn db:bootstrap
 yarn db:check
 ```
+
+## Transactional email
+
+FlipScout now has a backend email-provider abstraction used by both email
+verification and password recovery.
+
+Supported providers:
+
+```text
+console  Local development only. Prints the generated URL to the API console.
+resend   Sends real transactional email through the Resend REST API.
+```
+
+Local development:
+
+```env
+EMAIL_PROVIDER=console
+WEB_APP_URL=http://localhost:3000
+```
+
+Resend:
+
+```env
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=re_your_api_key
+RESEND_FROM_EMAIL=FlipScout <noreply@your-verified-domain.com>
+WEB_APP_URL=https://your-flipscout-domain.com
+```
+
+No Resend SDK is required. The API uses Node's built-in `fetch` to call
+`POST https://api.resend.com/emails` with bearer authentication.
+
+Production defaults to the Resend provider and fails fast at API startup when
+`RESEND_API_KEY` or `RESEND_FROM_EMAIL` is missing. The console provider also
+refuses to send in production so verification/reset tokens are not accidentally
+printed to production logs.
+
+Registration and resend-verification attempts do not discard a successfully
+created account if email delivery is temporarily unavailable. The API records
+the delivery result and logs the provider failure so the user can retry.
+Forgot-password keeps its response generic regardless of account existence or
+email-delivery state to prevent account enumeration.

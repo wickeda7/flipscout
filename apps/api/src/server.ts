@@ -4,6 +4,7 @@ import { URL } from "node:url";
 import type { ChangePasswordRequest, ForgotPasswordRequest, LoginRequest, OptimizeRouteRequest, RegisterRequest, ResetPasswordRequest, UpdateProfileRequest, VerifyEmailRequest } from "@flipscout/types";
 import { createProviders } from "./providers/index.js";
 import { AuthError } from "./providers/auth-provider.js";
+import { createEmailProvider } from "./email/index.js";
 import {
   optimizeWithMapbox,
   RouteError,
@@ -18,6 +19,7 @@ const {
   watchlistProvider,
   authProvider,
 } = createProviders();
+const emailProvider = createEmailProvider();
 
 const DEV_USER_ID =
   process.env.DEV_USER_ID ?? "00000000-0000-0000-0000-000000000001";
@@ -59,6 +61,17 @@ async function resolveUserId(
   }
 
   return user.id;
+}
+
+
+
+function webAppUrl(pathname: string, token: string): string {
+  const base = (process.env.WEB_APP_URL ?? "http://localhost:3000").replace(
+    /\/$/,
+    "",
+  );
+
+  return `${base}${pathname}?token=${encodeURIComponent(token)}`;
 }
 
 function validateEmail(email: string) {
@@ -121,6 +134,7 @@ const server = createServer(async (request, response) => {
         dataProvider: dataProviderName,
         dataProviderHealth,
         mapboxConfigured: Boolean(process.env.MAPBOX_ACCESS_TOKEN),
+        emailProvider: emailProvider.name,
       });
       return;
     }
@@ -166,11 +180,26 @@ const server = createServer(async (request, response) => {
         auth.user.id,
       );
 
-      if (verificationToken && NODE_ENV !== "production") {
-        const webAppUrl =
-          process.env.WEB_APP_URL ?? "http://localhost:3000";
-        auth.developmentVerificationUrl =
-          `${webAppUrl.replace(/\/$/, "")}/verify-email?token=${encodeURIComponent(verificationToken)}`;
+      if (verificationToken) {
+        const verificationUrl = webAppUrl(
+          "/verify-email",
+          verificationToken,
+        );
+
+        try {
+          await emailProvider.sendVerificationEmail({
+            to: auth.user.email,
+            verificationUrl,
+          });
+          auth.verificationEmailSent = true;
+        } catch (error) {
+          auth.verificationEmailSent = false;
+          console.error("Verification email delivery failed:", error);
+        }
+
+        if (NODE_ENV !== "production") {
+          auth.developmentVerificationUrl = verificationUrl;
+        }
       }
 
       writeJson(response, 201, auth);
@@ -200,8 +229,29 @@ const server = createServer(async (request, response) => {
       request.method === "POST" &&
       url.pathname === "/v1/auth/resend-verification"
     ) {
-      const userId = await resolveUserId(request);
-      const token = await authProvider.createEmailVerification(userId);
+      const bearerToken = getBearerToken(request);
+
+      if (!bearerToken) {
+        throw new AuthError(
+          "Authentication required.",
+          401,
+          "UNAUTHORIZED",
+        );
+      }
+
+      const currentUser = await authProvider.getUserByToken(bearerToken);
+
+      if (!currentUser) {
+        throw new AuthError(
+          "Session is invalid or expired.",
+          401,
+          "UNAUTHORIZED",
+        );
+      }
+
+      const token = await authProvider.createEmailVerification(
+        currentUser.id,
+      );
 
       if (!token) {
         writeJson(response, 200, {
@@ -211,20 +261,32 @@ const server = createServer(async (request, response) => {
         return;
       }
 
+      const verificationUrl = webAppUrl("/verify-email", token);
+      let emailSent = false;
+
+      try {
+        await emailProvider.sendVerificationEmail({
+          to: currentUser.email,
+          verificationUrl,
+        });
+        emailSent = true;
+      } catch (error) {
+        console.error("Verification email delivery failed:", error);
+      }
+
       const body: {
         ok: true;
         alreadyVerified: false;
+        emailSent: boolean;
         developmentVerificationUrl?: string;
       } = {
         ok: true,
         alreadyVerified: false,
+        emailSent,
       };
 
       if (NODE_ENV !== "production") {
-        const webAppUrl =
-          process.env.WEB_APP_URL ?? "http://localhost:3000";
-        body.developmentVerificationUrl =
-          `${webAppUrl.replace(/\/$/, "")}/verify-email?token=${encodeURIComponent(token)}`;
+        body.developmentVerificationUrl = verificationUrl;
       }
 
       writeJson(response, 200, body);
@@ -249,14 +311,22 @@ const server = createServer(async (request, response) => {
         developmentResetUrl?: string;
       } = { ok: true };
 
-      if (
-        token &&
-        NODE_ENV !== "production"
-      ) {
-        const webAppUrl =
-          process.env.WEB_APP_URL ?? "http://localhost:3000";
-        responseBody.developmentResetUrl =
-          `${webAppUrl.replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(token)}`;
+      if (token) {
+        const resetUrl = webAppUrl("/reset-password", token);
+
+        try {
+          await emailProvider.sendPasswordResetEmail({
+            to: email.toLowerCase(),
+            resetUrl,
+          });
+        } catch (error) {
+          // Keep the response generic to avoid account enumeration.
+          console.error("Password reset email delivery failed:", error);
+        }
+
+        if (NODE_ENV !== "production") {
+          responseBody.developmentResetUrl = resetUrl;
+        }
       }
 
       // Always return success to avoid revealing whether an account exists.

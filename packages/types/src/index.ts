@@ -77,6 +77,7 @@ export interface AuthUser {
 export interface AuthResponse {
   user: AuthUser;
   accessToken: string;
+  verificationEmailSent?: boolean;
   developmentVerificationUrl?: string;
 }
 
@@ -133,5 +134,6 @@ export interface VerificationResponse {
 export interface ResendVerificationResponse {
   ok: true;
   alreadyVerified: boolean;
+  emailSent?: boolean;
   developmentVerificationUrl?: string;
 }
