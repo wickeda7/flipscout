@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import type {
+  AuthResponse,
   AuthUser,
   LoginRequest,
   RegisterRequest,
@@ -23,7 +24,8 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login(input: LoginRequest): Promise<void>;
-  register(input: RegisterRequest): Promise<void>;
+  register(input: RegisterRequest): Promise<AuthResponse>;
+  refreshUser(): Promise<void>;
   logout(): Promise<void>;
   logoutAll(): Promise<void>;
   updateProfile(input: UpdateProfileRequest): Promise<void>;
@@ -82,9 +84,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (input: RegisterRequest) => {
       const result = await flipScoutApi.register(input);
       persistSession(result.accessToken, result.user);
+      return result;
     },
     [persistSession],
   );
+
+  const refreshUser = useCallback(async () => {
+    const result = await flipScoutApi.me();
+    setUser(result.user);
+  }, []);
 
   const logout = useCallback(async () => {
     try {
@@ -134,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       login,
       register,
+      refreshUser,
       logout,
       logoutAll,
       updateProfile,
@@ -144,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       login,
       register,
+      refreshUser,
       logout,
       logoutAll,
       updateProfile,

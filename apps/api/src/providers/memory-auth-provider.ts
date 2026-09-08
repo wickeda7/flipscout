@@ -7,8 +7,10 @@ import type {
 } from "@flipscout/types";
 import {
   createAccessToken,
+  createEmailVerificationToken,
   createPasswordResetToken,
   hashAccessToken,
+  hashEmailVerificationToken,
   hashPassword,
   hashPasswordResetToken,
   verifyPassword,
@@ -22,6 +24,10 @@ export class MemoryAuthProvider implements AuthProvider {
   private readonly usersById = new Map<string, MemoryUser>();
   private readonly sessions = new Map<string, string>();
   private readonly passwordResets = new Map<string, { userId: string; expiresAt: number }>();
+  private readonly emailVerifications = new Map<
+    string,
+    { userId: string; expiresAt: number }
+  >();
 
   async register(input: RegisterRequest): Promise<AuthResponse> {
     const email = input.email.trim().toLowerCase();
@@ -38,6 +44,7 @@ export class MemoryAuthProvider implements AuthProvider {
       id: randomUUID(),
       email,
       displayName: input.displayName?.trim() || null,
+      emailVerified: false,
       passwordHash: hashPassword(input.password),
     };
 
@@ -163,6 +170,63 @@ export class MemoryAuthProvider implements AuthProvider {
     await this.logoutAll(user.id);
   }
 
+
+  async createEmailVerification(userId: string): Promise<string | null> {
+    const user = this.usersById.get(userId);
+    if (!user || user.emailVerified) return null;
+
+    for (const [tokenHash, verification] of this.emailVerifications.entries()) {
+      if (verification.userId === userId) {
+        this.emailVerifications.delete(tokenHash);
+      }
+    }
+
+    const token = createEmailVerificationToken();
+    this.emailVerifications.set(hashEmailVerificationToken(token), {
+      userId,
+      expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+    });
+
+    return token;
+  }
+
+  async verifyEmail(token: string): Promise<AuthUser> {
+    const tokenHash = hashEmailVerificationToken(token);
+    const verification = this.emailVerifications.get(tokenHash);
+
+    if (!verification || verification.expiresAt <= Date.now()) {
+      this.emailVerifications.delete(tokenHash);
+      throw new AuthError(
+        "Email verification link is invalid or expired.",
+        400,
+        "INVALID_VERIFICATION_TOKEN",
+      );
+    }
+
+    const user = this.usersById.get(verification.userId);
+
+    if (!user) {
+      this.emailVerifications.delete(tokenHash);
+      throw new AuthError(
+        "Email verification link is invalid or expired.",
+        400,
+        "INVALID_VERIFICATION_TOKEN",
+      );
+    }
+
+    user.emailVerified = true;
+    this.usersById.set(user.id, user);
+    this.usersByEmail.set(user.email, user);
+
+    for (const [hash, item] of this.emailVerifications.entries()) {
+      if (item.userId === user.id) {
+        this.emailVerifications.delete(hash);
+      }
+    }
+
+    return this.publicUser(user);
+  }
+
   private createSession(user: MemoryUser): AuthResponse {
     const accessToken = createAccessToken();
     this.sessions.set(hashAccessToken(accessToken), user.id);
@@ -178,6 +242,7 @@ export class MemoryAuthProvider implements AuthProvider {
       id: user.id,
       email: user.email,
       displayName: user.displayName,
+      emailVerified: user.emailVerified,
     };
   }
 }

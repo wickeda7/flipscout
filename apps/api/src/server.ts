@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createServer } from "node:http";
 import { URL } from "node:url";
-import type { ChangePasswordRequest, ForgotPasswordRequest, LoginRequest, OptimizeRouteRequest, RegisterRequest, ResetPasswordRequest, UpdateProfileRequest } from "@flipscout/types";
+import type { ChangePasswordRequest, ForgotPasswordRequest, LoginRequest, OptimizeRouteRequest, RegisterRequest, ResetPasswordRequest, UpdateProfileRequest, VerifyEmailRequest } from "@flipscout/types";
 import { createProviders } from "./providers/index.js";
 import { AuthError } from "./providers/auth-provider.js";
 import {
@@ -162,10 +162,74 @@ const server = createServer(async (request, response) => {
         displayName,
       });
 
+      const verificationToken = await authProvider.createEmailVerification(
+        auth.user.id,
+      );
+
+      if (verificationToken && NODE_ENV !== "production") {
+        const webAppUrl =
+          process.env.WEB_APP_URL ?? "http://localhost:3000";
+        auth.developmentVerificationUrl =
+          `${webAppUrl.replace(/\/$/, "")}/verify-email?token=${encodeURIComponent(verificationToken)}`;
+      }
+
       writeJson(response, 201, auth);
       return;
     }
 
+
+
+    if (request.method === "POST" && url.pathname === "/v1/auth/verify-email") {
+      const body = await readJson<VerifyEmailRequest>(request);
+      const token = body.token?.trim() ?? "";
+
+      if (!token) {
+        writeJson(response, 400, {
+          error: "Email verification token is required.",
+          code: "MISSING_VERIFICATION_TOKEN",
+        });
+        return;
+      }
+
+      const user = await authProvider.verifyEmail(token);
+      writeJson(response, 200, { ok: true, user });
+      return;
+    }
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/v1/auth/resend-verification"
+    ) {
+      const userId = await resolveUserId(request);
+      const token = await authProvider.createEmailVerification(userId);
+
+      if (!token) {
+        writeJson(response, 200, {
+          ok: true,
+          alreadyVerified: true,
+        });
+        return;
+      }
+
+      const body: {
+        ok: true;
+        alreadyVerified: false;
+        developmentVerificationUrl?: string;
+      } = {
+        ok: true,
+        alreadyVerified: false,
+      };
+
+      if (NODE_ENV !== "production") {
+        const webAppUrl =
+          process.env.WEB_APP_URL ?? "http://localhost:3000";
+        body.developmentVerificationUrl =
+          `${webAppUrl.replace(/\/$/, "")}/verify-email?token=${encodeURIComponent(token)}`;
+      }
+
+      writeJson(response, 200, body);
+      return;
+    }
 
     if (request.method === "POST" && url.pathname === "/v1/auth/forgot-password") {
       const body = await readJson<ForgotPasswordRequest>(request);

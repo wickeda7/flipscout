@@ -10,7 +10,10 @@ import type {
   OptimizeRouteResponse,
   RegisterRequest,
   ResetPasswordRequest,
+  ResendVerificationResponse,
   UpdateProfileRequest,
+  VerificationResponse,
+  VerifyEmailRequest,
   WatchlistResponse,
 } from "@flipscout/types";
 
@@ -81,6 +84,22 @@ export class FlipScoutApiClient {
     });
   }
 
+
+
+  async verifyEmail(input: VerifyEmailRequest): Promise<VerificationResponse> {
+    return this.request<VerificationResponse>("/v1/auth/verify-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+  }
+
+  async resendVerification(): Promise<ResendVerificationResponse> {
+    return this.request<ResendVerificationResponse>(
+      "/v1/auth/resend-verification",
+      { method: "POST" },
+    );
+  }
 
   async forgotPassword(
     input: ForgotPasswordRequest,

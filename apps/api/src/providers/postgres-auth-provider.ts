@@ -8,8 +8,10 @@ import type {
 } from "@flipscout/types";
 import {
   createAccessToken,
+  createEmailVerificationToken,
   createPasswordResetToken,
   hashAccessToken,
+  hashEmailVerificationToken,
   hashPassword,
   hashPasswordResetToken,
   verifyPassword,
@@ -21,6 +23,7 @@ type UserRow = {
   email: string;
   display_name: string | null;
   password_hash: string | null;
+  email_verified_at: string | Date | null;
 };
 
 export class PostgresAuthProvider implements AuthProvider {
@@ -35,7 +38,7 @@ export class PostgresAuthProvider implements AuthProvider {
         `
         INSERT INTO users (id, email, display_name, password_hash)
         VALUES ($1, $2, $3, $4)
-        RETURNING id::text, email, display_name, password_hash
+        RETURNING id::text, email, display_name, password_hash, email_verified_at
         `,
         [
           id,
@@ -68,7 +71,7 @@ export class PostgresAuthProvider implements AuthProvider {
 
     const result = await this.pool.query<UserRow>(
       `
-      SELECT id::text, email, display_name, password_hash
+      SELECT id::text, email, display_name, password_hash, email_verified_at
       FROM users
       WHERE LOWER(email) = $1
       LIMIT 1
@@ -92,7 +95,7 @@ export class PostgresAuthProvider implements AuthProvider {
   async getUserByToken(token: string): Promise<AuthUser | null> {
     const result = await this.pool.query<UserRow>(
       `
-      SELECT u.id::text, u.email, u.display_name, u.password_hash
+      SELECT u.id::text, u.email, u.display_name, u.password_hash, u.email_verified_at
       FROM auth_sessions s
       JOIN users u ON u.id = s.user_id
       WHERE s.token_hash = $1
@@ -129,7 +132,7 @@ export class PostgresAuthProvider implements AuthProvider {
       UPDATE users
       SET display_name = $2
       WHERE id = $1
-      RETURNING id::text, email, display_name, password_hash
+      RETURNING id::text, email, display_name, password_hash, email_verified_at
       `,
       [userId, displayName?.trim() || null],
     );
@@ -148,7 +151,7 @@ export class PostgresAuthProvider implements AuthProvider {
   ): Promise<void> {
     const result = await this.pool.query<UserRow>(
       `
-      SELECT id::text, email, display_name, password_hash
+      SELECT id::text, email, display_name, password_hash, email_verified_at
       FROM users
       WHERE id = $1
       LIMIT 1
@@ -264,6 +267,108 @@ export class PostgresAuthProvider implements AuthProvider {
     }
   }
 
+
+  async createEmailVerification(userId: string): Promise<string | null> {
+    const result = await this.pool.query<{
+      id: string;
+      email_verified_at: string | Date | null;
+    }>(
+      `
+      SELECT id::text, email_verified_at
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [userId],
+    );
+
+    const user = result.rows[0];
+    if (!user || user.email_verified_at) return null;
+
+    const token = createEmailVerificationToken();
+    const tokenHash = hashEmailVerificationToken(token);
+    const hours = Number(process.env.EMAIL_VERIFICATION_HOURS ?? 24);
+
+    await this.pool.query(
+      "DELETE FROM email_verification_tokens WHERE user_id = $1",
+      [userId],
+    );
+
+    await this.pool.query(
+      `
+      INSERT INTO email_verification_tokens (token_hash, user_id, expires_at)
+      VALUES ($1, $2, NOW() + ($3::text || ' hours')::interval)
+      `,
+      [tokenHash, userId, hours],
+    );
+
+    return token;
+  }
+
+  async verifyEmail(token: string): Promise<AuthUser> {
+    const tokenHash = hashEmailVerificationToken(token);
+    const client = await this.pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const verificationResult = await client.query<{ user_id: string }>(
+        `
+        SELECT user_id::text
+        FROM email_verification_tokens
+        WHERE token_hash = $1
+          AND expires_at > NOW()
+        FOR UPDATE
+        `,
+        [tokenHash],
+      );
+
+      const verification = verificationResult.rows[0];
+
+      if (!verification) {
+        await client.query("ROLLBACK");
+        throw new AuthError(
+          "Email verification link is invalid or expired.",
+          400,
+          "INVALID_VERIFICATION_TOKEN",
+        );
+      }
+
+      const userResult = await client.query<UserRow>(
+        `
+        UPDATE users
+        SET email_verified_at = COALESCE(email_verified_at, NOW())
+        WHERE id = $1
+        RETURNING id::text, email, display_name, password_hash, email_verified_at
+        `,
+        [verification.user_id],
+      );
+
+      await client.query(
+        "DELETE FROM email_verification_tokens WHERE user_id = $1",
+        [verification.user_id],
+      );
+
+      await client.query("COMMIT");
+
+      const user = userResult.rows[0];
+      if (!user) {
+        throw new AuthError("User not found.", 404, "USER_NOT_FOUND");
+      }
+
+      return this.publicUser(user);
+    } catch (error) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        // Preserve the original error.
+      }
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   private async createSession(user: AuthUser): Promise<AuthResponse> {
     const accessToken = createAccessToken();
     const tokenHash = hashAccessToken(accessToken);
@@ -285,6 +390,7 @@ export class PostgresAuthProvider implements AuthProvider {
       id: row.id,
       email: row.email,
       displayName: row.display_name,
+      emailVerified: Boolean(row.email_verified_at),
     };
   }
 }

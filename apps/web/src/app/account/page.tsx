@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   KeyRound,
@@ -161,6 +162,35 @@ export default function AccountPage() {
                     </div>
                     <div className="mt-2 break-words text-sm font-medium text-neutral-200">
                       {user?.email}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-4">
+                    <div className="text-xs uppercase tracking-wide text-neutral-600">
+                      {t("account.emailStatus")}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <span
+                        className={[
+                          "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
+                          user?.emailVerified
+                            ? "bg-emerald-500/10 text-emerald-300"
+                            : "bg-amber-500/10 text-amber-300",
+                        ].join(" ")}
+                      >
+                        {user?.emailVerified
+                          ? t("account.verified")
+                          : t("account.unverified")}
+                      </span>
+
+                      {!user?.emailVerified && (
+                        <Link
+                          href="/verify-email"
+                          className="text-xs font-semibold text-white transition hover:text-emerald-300"
+                        >
+                          {t("account.verifyNow")}
+                        </Link>
+                      )}
                     </div>
                   </div>
 

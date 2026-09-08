@@ -39,12 +39,20 @@ export default function RegisterPage() {
     setSubmitting(true);
 
     try {
-      await register({
+      const result = await register({
         email,
         password,
         displayName: displayName.trim() || undefined,
       });
-      router.replace("/");
+
+      if (result.developmentVerificationUrl) {
+        window.sessionStorage.setItem(
+          "flipscout-development-verification-url",
+          result.developmentVerificationUrl,
+        );
+      }
+
+      router.replace("/verify-email");
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Unable to create account.",

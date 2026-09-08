@@ -71,11 +71,13 @@ export interface AuthUser {
   id: string;
   email: string;
   displayName: string | null;
+  emailVerified: boolean;
 }
 
 export interface AuthResponse {
   user: AuthUser;
   accessToken: string;
+  developmentVerificationUrl?: string;
 }
 
 export interface RegisterRequest {
@@ -116,4 +118,20 @@ export interface ForgotPasswordResponse {
 export interface ResetPasswordRequest {
   token: string;
   newPassword: string;
+}
+
+
+export interface VerifyEmailRequest {
+  token: string;
+}
+
+export interface VerificationResponse {
+  ok: true;
+  user: AuthUser;
+}
+
+export interface ResendVerificationResponse {
+  ok: true;
+  alreadyVerified: boolean;
+  developmentVerificationUrl?: string;
 }

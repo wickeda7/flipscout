@@ -366,3 +366,39 @@ After upgrading, apply the new table:
 yarn db:bootstrap
 yarn db:check
 ```
+
+## Email verification
+
+New accounts now enter an email-verification flow at:
+
+```text
+/verify-email
+```
+
+Shared API endpoints:
+
+```text
+POST /v1/auth/verify-email
+POST /v1/auth/resend-verification
+```
+
+The `users` table now includes `email_verified_at`, and one-time verification
+tokens are stored in `email_verification_tokens`. Only a SHA-256 hash of each
+verification token is stored. Tokens expire after `EMAIL_VERIFICATION_HOURS`
+(24 hours by default).
+
+Registration creates a verification request automatically. In development,
+the API can return a `developmentVerificationUrl` so the complete flow is
+testable before an email delivery provider is connected. Production responses
+do not expose verification tokens.
+
+The Account page displays whether the current email address has been verified
+and links unverified users back to the verification flow.
+
+After upgrading:
+
+```bash
+yarn install
+yarn db:bootstrap
+yarn db:check
+```
