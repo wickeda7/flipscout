@@ -7,6 +7,7 @@ import { DealCard } from "@/components/dashboard/DealCard";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { useDeals } from "@/hooks/use-deals";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 
 export default function WatchlistPage() {
   const { savedIds, clear, loading: watchlistLoading, error: watchlistError } = useWatchlist();
@@ -23,6 +24,7 @@ export default function WatchlistPage() {
   const units = savedDeals.reduce((sum, deal) => sum + deal.inventory, 0);
 
   return (
+    <RequireAuth>
     <div className="flex min-h-screen bg-neutral-950 text-neutral-100">
       <Sidebar />
 
@@ -109,6 +111,7 @@ export default function WatchlistPage() {
         </div>
       </main>
     </div>
+    </RequireAuth>
   );
 }
 

@@ -102,8 +102,11 @@ export function Sidebar() {
             <div className="h-9 animate-pulse rounded-lg bg-white/5" />
           ) : user ? (
             <>
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-300">
+              <Link
+                href="/account"
+                className="flex items-center gap-2 rounded-lg transition hover:bg-white/[0.035]"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-300">
                   <UserRound size={16} />
                 </span>
                 <div className="min-w-0">
@@ -116,7 +119,7 @@ export function Sidebar() {
                     </div>
                   )}
                 </div>
-              </div>
+              </Link>
               <button
                 type="button"
                 onClick={() => void logout()}

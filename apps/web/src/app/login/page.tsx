@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -10,6 +10,7 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const { t } = useI18n();
   const [email, setEmail] = useState("");
@@ -25,7 +26,8 @@ export default function LoginPage() {
 
     try {
       await login({ email, password });
-      router.replace("/");
+      const next = searchParams.get("next");
+      router.replace(next && next.startsWith("/") ? next : "/");
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Unable to log in.",

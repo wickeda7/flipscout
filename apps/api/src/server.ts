@@ -35,10 +35,30 @@ async function resolveUserId(
   request: import("node:http").IncomingMessage,
 ): Promise<string> {
   const token = getBearerToken(request);
-  if (!token) return DEV_USER_ID;
+
+  if (!token) {
+    if (process.env.ALLOW_DEV_AUTH_FALLBACK === "true") {
+      return DEV_USER_ID;
+    }
+
+    throw new AuthError(
+      "Authentication required.",
+      401,
+      "UNAUTHORIZED",
+    );
+  }
 
   const user = await authProvider.getUserByToken(token);
-  return user?.id ?? DEV_USER_ID;
+
+  if (!user) {
+    throw new AuthError(
+      "Session is invalid or expired.",
+      401,
+      "UNAUTHORIZED",
+    );
+  }
+
+  return user.id;
 }
 
 function validateEmail(email: string) {

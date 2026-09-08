@@ -294,3 +294,19 @@ Native should keep credentials in platform secure storage.
 Authenticated watchlist requests use the logged-in user ID. Until auth is
 required everywhere, requests without a bearer token continue to use
 `DEV_USER_ID` as the development fallback.
+
+## Protected account flow
+
+The web app now includes `/account`, and `/watchlist` redirects signed-out
+users to `/login?next=/watchlist`. After a successful login, FlipScout returns
+the user to the originally requested page.
+
+Authenticated user-owned API resources reject invalid or expired bearer tokens.
+For local development only, requests without a token can still use the seeded
+development identity when:
+
+```env
+ALLOW_DEV_AUTH_FALLBACK=true
+```
+
+Set this to `false` when testing production-style authentication behavior.
