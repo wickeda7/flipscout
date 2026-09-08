@@ -21,4 +21,11 @@ export interface AuthProvider {
   login(input: LoginRequest): Promise<AuthResponse>;
   getUserByToken(token: string): Promise<AuthUser | null>;
   logout(token: string): Promise<void>;
+  logoutAll(userId: string): Promise<void>;
+  updateProfile(userId: string, displayName: string | null): Promise<AuthUser>;
+  changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void>;
 }

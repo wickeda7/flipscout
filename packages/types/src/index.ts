@@ -88,3 +88,13 @@ export interface LoginRequest {
   email: string;
   password: string;
 }
+
+
+export interface UpdateProfileRequest {
+  displayName?: string | null;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}

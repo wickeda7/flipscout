@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createServer } from "node:http";
 import { URL } from "node:url";
-import type { LoginRequest, OptimizeRouteRequest, RegisterRequest } from "@flipscout/types";
+import type { ChangePasswordRequest, LoginRequest, OptimizeRouteRequest, RegisterRequest, UpdateProfileRequest } from "@flipscout/types";
 import { createProviders } from "./providers/index.js";
 import { AuthError } from "./providers/auth-provider.js";
 import {
@@ -74,7 +74,7 @@ function writeJson(
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": WEB_ORIGIN,
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
   });
   response.end(JSON.stringify(body));
 }
@@ -212,6 +212,76 @@ const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/v1/auth/logout") {
       const token = getBearerToken(request);
       if (token) await authProvider.logout(token);
+      writeJson(response, 200, { ok: true });
+      return;
+    }
+
+
+    if (request.method === "PATCH" && url.pathname === "/v1/account/profile") {
+      const userId = await resolveUserId(request);
+      const body = await readJson<UpdateProfileRequest>(request);
+      const displayName =
+        body.displayName === null || body.displayName === undefined
+          ? null
+          : body.displayName.trim();
+
+      if (displayName && displayName.length > 80) {
+        writeJson(response, 400, {
+          error: "Display name must be 80 characters or fewer.",
+          code: "INVALID_DISPLAY_NAME",
+        });
+        return;
+      }
+
+      const user = await authProvider.updateProfile(userId, displayName);
+      writeJson(response, 200, { user });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/account/password") {
+      const userId = await resolveUserId(request);
+      const body = await readJson<ChangePasswordRequest>(request);
+
+      if (!body.currentPassword || !body.newPassword) {
+        writeJson(response, 400, {
+          error: "Current password and new password are required.",
+          code: "MISSING_PASSWORD",
+        });
+        return;
+      }
+
+      if (body.newPassword.length < 8) {
+        writeJson(response, 400, {
+          error: "New password must be at least 8 characters.",
+          code: "WEAK_PASSWORD",
+        });
+        return;
+      }
+
+      if (body.currentPassword === body.newPassword) {
+        writeJson(response, 400, {
+          error: "New password must be different from the current password.",
+          code: "PASSWORD_UNCHANGED",
+        });
+        return;
+      }
+
+      await authProvider.changePassword(
+        userId,
+        body.currentPassword,
+        body.newPassword,
+      );
+
+      writeJson(response, 200, {
+        ok: true,
+        sessionsRevoked: true,
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/account/logout-all") {
+      const userId = await resolveUserId(request);
+      await authProvider.logoutAll(userId);
       writeJson(response, 200, { ok: true });
       return;
     }

@@ -310,3 +310,24 @@ ALLOW_DEV_AUTH_FALLBACK=true
 ```
 
 Set this to `false` when testing production-style authentication behavior.
+
+## Account management
+
+Authenticated users can now manage their account at `/account`.
+
+Shared API endpoints:
+
+```text
+PATCH /v1/account/profile
+POST  /v1/account/password
+POST  /v1/account/logout-all
+```
+
+Changing a password verifies the current password, stores a new `scrypt` hash,
+and revokes every active session for that user. The client then returns the
+user to `/login`.
+
+`POST /v1/account/logout-all` also revokes all active sessions without changing
+the password. Profile updates currently support the display name; email changes
+are intentionally not included yet because production email changes should be
+paired with verification.

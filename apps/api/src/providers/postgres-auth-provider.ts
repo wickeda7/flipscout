@@ -110,6 +110,71 @@ export class PostgresAuthProvider implements AuthProvider {
     );
   }
 
+
+  async logoutAll(userId: string): Promise<void> {
+    await this.pool.query(
+      "DELETE FROM auth_sessions WHERE user_id = $1",
+      [userId],
+    );
+  }
+
+  async updateProfile(
+    userId: string,
+    displayName: string | null,
+  ): Promise<AuthUser> {
+    const result = await this.pool.query<UserRow>(
+      `
+      UPDATE users
+      SET display_name = $2
+      WHERE id = $1
+      RETURNING id::text, email, display_name, password_hash
+      `,
+      [userId, displayName?.trim() || null],
+    );
+
+    if (!result.rows[0]) {
+      throw new AuthError("User not found.", 404, "USER_NOT_FOUND");
+    }
+
+    return this.publicUser(result.rows[0]);
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const result = await this.pool.query<UserRow>(
+      `
+      SELECT id::text, email, display_name, password_hash
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [userId],
+    );
+
+    const user = result.rows[0];
+
+    if (
+      !user?.password_hash ||
+      !verifyPassword(currentPassword, user.password_hash)
+    ) {
+      throw new AuthError(
+        "Current password is incorrect.",
+        400,
+        "INVALID_CURRENT_PASSWORD",
+      );
+    }
+
+    await this.pool.query(
+      "UPDATE users SET password_hash = $2 WHERE id = $1",
+      [userId, hashPassword(newPassword)],
+    );
+
+    await this.logoutAll(userId);
+  }
+
   private async createSession(user: AuthUser): Promise<AuthResponse> {
     const accessToken = createAccessToken();
     const tokenHash = hashAccessToken(accessToken);

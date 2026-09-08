@@ -1,11 +1,13 @@
 import type {
   AuthResponse,
   AuthUser,
+  ChangePasswordRequest,
   Deal,
   LoginRequest,
   OptimizeRouteRequest,
   OptimizeRouteResponse,
   RegisterRequest,
+  UpdateProfileRequest,
   WatchlistResponse,
 } from "@flipscout/types";
 
@@ -82,6 +84,32 @@ export class FlipScoutApiClient {
 
   async logout(): Promise<void> {
     await this.request<{ ok: true }>("/v1/auth/logout", {
+      method: "POST",
+    });
+  }
+
+
+  async updateProfile(input: UpdateProfileRequest): Promise<{ user: AuthUser }> {
+    return this.request<{ user: AuthUser }>("/v1/account/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+  }
+
+  async changePassword(input: ChangePasswordRequest): Promise<void> {
+    await this.request<{ ok: true; sessionsRevoked: true }>(
+      "/v1/account/password",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  async logoutAll(): Promise<void> {
+    await this.request<{ ok: true }>("/v1/account/logout-all", {
       method: "POST",
     });
   }

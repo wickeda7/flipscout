@@ -71,6 +71,51 @@ export class MemoryAuthProvider implements AuthProvider {
     this.sessions.delete(hashAccessToken(token));
   }
 
+
+  async logoutAll(userId: string): Promise<void> {
+    for (const [tokenHash, sessionUserId] of this.sessions.entries()) {
+      if (sessionUserId === userId) {
+        this.sessions.delete(tokenHash);
+      }
+    }
+  }
+
+  async updateProfile(
+    userId: string,
+    displayName: string | null,
+  ): Promise<AuthUser> {
+    const user = this.usersById.get(userId);
+    if (!user) {
+      throw new AuthError("User not found.", 404, "USER_NOT_FOUND");
+    }
+
+    user.displayName = displayName?.trim() || null;
+    this.usersById.set(userId, user);
+    this.usersByEmail.set(user.email, user);
+    return this.publicUser(user);
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = this.usersById.get(userId);
+
+    if (!user || !verifyPassword(currentPassword, user.passwordHash)) {
+      throw new AuthError(
+        "Current password is incorrect.",
+        400,
+        "INVALID_CURRENT_PASSWORD",
+      );
+    }
+
+    user.passwordHash = hashPassword(newPassword);
+    this.usersById.set(userId, user);
+    this.usersByEmail.set(user.email, user);
+    await this.logoutAll(userId);
+  }
+
   private createSession(user: MemoryUser): AuthResponse {
     const accessToken = createAccessToken();
     this.sessions.set(hashAccessToken(accessToken), user.id);
