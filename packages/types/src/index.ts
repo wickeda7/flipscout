@@ -26,6 +26,11 @@ export interface Deal {
   status: DealStatus;
   category: string;
   updatedMinutesAgo: number;
+  source?: RetailerSource;
+  sourceUrl?: string | null;
+  sku?: string | null;
+  upc?: string | null;
+  isActive?: boolean;
 }
 
 export interface StoreRouteInput {
@@ -136,4 +141,66 @@ export interface ResendVerificationResponse {
   alreadyVerified: boolean;
   emailSent?: boolean;
   developmentVerificationUrl?: string;
+}
+
+
+export type RetailerSource =
+  | "home-depot"
+  | "lowes"
+  | "walmart"
+  | "target"
+  | "costco"
+  | "dollar-general"
+  | "mock";
+
+export interface RetailerSourceStore {
+  source: RetailerSource;
+  externalStoreId: string;
+  retailer: string;
+  storeName: string;
+  city: string;
+  state: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface RetailerSourceDeal {
+  source: RetailerSource;
+  externalDealId: string;
+  externalStoreId: string;
+  productName: string;
+  brand: string;
+  category: string;
+  retailPrice: number;
+  clearancePrice: number;
+  resalePrice?: number;
+  marketplaceFeePercent?: number;
+  shippingCost?: number;
+  otherCosts?: number;
+  inventory: number;
+  sourceUpdatedAt: string;
+  sourceUrl?: string;
+  sku?: string;
+  upc?: string;
+}
+
+export interface RetailerIngestionBatch {
+  source: RetailerSource;
+  stores: RetailerSourceStore[];
+  deals: RetailerSourceDeal[];
+  fetchedAt: string;
+  /**
+   * True only when the batch represents the complete known inventory for
+   * this source. Partial/paginated batches must set this to false.
+   */
+  fullSnapshot: boolean;
+}
+
+export interface RetailerIngestionResult {
+  source: RetailerSource;
+  storesUpserted: number;
+  dealsUpserted: number;
+  dealsSkipped: number;
+  startedAt: string;
+  completedAt: string;
 }

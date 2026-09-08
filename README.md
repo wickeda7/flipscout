@@ -509,3 +509,67 @@ logging out, changing a password, or losing a session in one tab is reflected
 in other FlipScout tabs without a manual refresh. This synchronization is a web
 client behavior; the shared API contract remains unchanged for the future
 React Native client.
+
+## Phase 3: retailer ingestion foundation
+
+Phase 3 now has a retailer-neutral ingestion layer. Web and future React Native
+clients continue reading the same `/v1/deals` API; retailer integrations do not
+leak into either client.
+
+Normalized shared contracts cover:
+
+```text
+RetailerSourceStore
+RetailerSourceDeal
+RetailerIngestionBatch
+RetailerIngestionResult
+RetailerAdapter
+```
+
+The PostgreSQL ingestion service performs transactional store/deal upserts,
+central profit and BUY-score calculation, source metadata storage, freshness
+tracking, and ingestion-run auditing.
+
+New deal metadata includes:
+
+```text
+source
+source_url
+sku
+upc
+last_seen_at
+is_active
+```
+
+Stores now track:
+
+```text
+source
+external_store_id
+source_updated_at
+```
+
+A successful complete snapshot marks previously unseen deals from that source
+inactive. Partial or paginated adapters must set `fullSnapshot=false`, which
+prevents them from accidentally deactivating inventory they did not fetch.
+
+`/v1/deals` and `/v1/deals/:id` now return only active deals. Optional source,
+SKU, UPC, and source URL metadata are also available to clients without
+changing the core product/resale fields.
+
+Run the included pipeline test adapter after applying the schema:
+
+```bash
+yarn install
+yarn db:bootstrap
+yarn db:check
+yarn ingest:retailer mock
+```
+
+The `mock` adapter exercises the same PostgreSQL ingestion path that real
+retailer connectors will use. It is not a substitute for a retailer API.
+
+Real Home Depot, Lowe's, Walmart, Target, Costco, or Dollar General connectors
+are intentionally not fabricated. The next retailer-specific step should
+select an authorized API/data source and implement its adapter behind the
+shared `RetailerAdapter` contract.

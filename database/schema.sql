@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 
 CREATE TABLE IF NOT EXISTS stores (
   id UUID PRIMARY KEY,
+  source TEXT NOT NULL DEFAULT 'mock',
+  external_store_id TEXT,
   retailer TEXT NOT NULL,
   retailer_store_id TEXT,
   store_name TEXT NOT NULL,
@@ -50,12 +52,19 @@ CREATE TABLE IF NOT EXISTS stores (
   state TEXT NOT NULL,
   latitude DOUBLE PRECISION NOT NULL,
   longitude DOUBLE PRECISION NOT NULL,
+  source_updated_at TIMESTAMPTZ,
+  source_url TEXT,
+  sku TEXT,
+  upc TEXT,
+  last_seen_at TIMESTAMPTZ,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS deals (
   id UUID PRIMARY KEY,
+  source TEXT NOT NULL DEFAULT 'mock',
   external_id TEXT,
   store_id UUID REFERENCES stores(id) ON DELETE SET NULL,
   product_name TEXT NOT NULL,
@@ -77,6 +86,11 @@ CREATE TABLE IF NOT EXISTS deals (
     status IN ('strong-buy', 'buy', 'maybe', 'skip')
   ),
   source_updated_at TIMESTAMPTZ,
+  source_url TEXT,
+  sku TEXT,
+  upc TEXT,
+  last_seen_at TIMESTAMPTZ,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -105,3 +119,32 @@ CREATE INDEX IF NOT EXISTS email_verification_tokens_user_id_idx ON email_verifi
 CREATE INDEX IF NOT EXISTS email_verification_tokens_expires_at_idx ON email_verification_tokens(expires_at);
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+
+
+CREATE TABLE IF NOT EXISTS ingestion_runs (
+  id UUID PRIMARY KEY,
+  source TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('completed', 'failed')),
+  fetched_at TIMESTAMPTZ,
+  stores_upserted INTEGER NOT NULL DEFAULT 0,
+  deals_upserted INTEGER NOT NULL DEFAULT 0,
+  deals_skipped INTEGER NOT NULL DEFAULT 0,
+  started_at TIMESTAMPTZ NOT NULL,
+  completed_at TIMESTAMPTZ NOT NULL,
+  error_message TEXT
+);
+
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'mock';
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS external_store_id TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS source_updated_at TIMESTAMPTZ;
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'mock';
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS source_url TEXT;
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS sku TEXT;
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS upc TEXT;
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ;
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+CREATE UNIQUE INDEX IF NOT EXISTS stores_source_external_id_uidx ON stores(source, external_store_id);
+CREATE UNIQUE INDEX IF NOT EXISTS deals_source_external_store_uidx ON deals(source, external_id, store_id);
+CREATE INDEX IF NOT EXISTS deals_last_seen_at_idx ON deals(last_seen_at DESC);
+CREATE INDEX IF NOT EXISTS deals_is_active_idx ON deals(is_active);
+CREATE INDEX IF NOT EXISTS ingestion_runs_source_started_idx ON ingestion_runs(source, started_at DESC);

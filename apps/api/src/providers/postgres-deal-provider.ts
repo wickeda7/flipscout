@@ -28,6 +28,11 @@ type DealRow = {
   status: Deal["status"];
   category: string;
   updated_minutes_ago: string | number;
+  source: Deal["source"];
+  source_url: string | null;
+  sku: string | null;
+  upc: string | null;
+  is_active: boolean;
 };
 
 function number(value: string | number) {
@@ -61,6 +66,11 @@ function mapDeal(row: DealRow): Deal {
     status: row.status,
     category: row.category,
     updatedMinutesAgo: number(row.updated_minutes_ago),
+    source: row.source,
+    sourceUrl: row.source_url,
+    sku: row.sku,
+    upc: row.upc,
+    isActive: row.is_active,
   };
 }
 
@@ -72,7 +82,7 @@ export class PostgresDealProvider implements DealProvider {
       query.originLatitude ?? null,
       query.originLongitude ?? null,
     ];
-    const where: string[] = [];
+    const where: string[] = ["d.is_active = TRUE"];
 
     if (query.q) {
       values.push(`%${query.q}%`);
@@ -138,6 +148,11 @@ export class PostgresDealProvider implements DealProvider {
         d.buy_score,
         d.status,
         d.category,
+        d.source,
+        d.source_url,
+        d.sku,
+        d.upc,
+        d.is_active,
         EXTRACT(EPOCH FROM (NOW() - COALESCE(d.source_updated_at, d.updated_at))) / 60
           AS updated_minutes_ago
       FROM deals d
@@ -179,10 +194,16 @@ export class PostgresDealProvider implements DealProvider {
         d.buy_score,
         d.status,
         d.category,
-        EXTRACT(EPOCH FROM (NOW() - d.updated_at)) / 60 AS updated_minutes_ago
+        d.source,
+        d.source_url,
+        d.sku,
+        d.upc,
+        d.is_active,
+        EXTRACT(EPOCH FROM (NOW() - COALESCE(d.source_updated_at, d.updated_at))) / 60 AS updated_minutes_ago
       FROM deals d
       JOIN stores s ON s.id = d.store_id
       WHERE d.id = $1
+        AND d.is_active = TRUE
       LIMIT 1
       `,
       [id],
