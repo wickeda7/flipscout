@@ -1,3 +1,7 @@
+## Phase 4.1 hotfix validation
+
+Reproduced PostgreSQL error 42703 by removing stores.is_active from a populated database. Reapplying the updated schema twice fixed the exact Lake Mary query and preserved the store count. Executed in PGlite. The opt-in standalone PostgreSQL suite now covers this upgrade case too. The user’s exact original error has not yet been confirmed because their localhost service is inaccessible from this session.
+
 # Phase 4 validation
 
 Base: flipscout-phase3-connectors.zip. Node 22.22.2 / Yarn Classic 1.22.22.

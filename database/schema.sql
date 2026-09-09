@@ -148,3 +148,5 @@ CREATE UNIQUE INDEX IF NOT EXISTS deals_source_external_store_uidx ON deals(sour
 CREATE INDEX IF NOT EXISTS deals_last_seen_at_idx ON deals(last_seen_at DESC);
 CREATE INDEX IF NOT EXISTS deals_is_active_idx ON deals(is_active);
 CREATE INDEX IF NOT EXISTS ingestion_runs_source_started_idx ON ingestion_runs(source, started_at DESC);
+-- Phase 4: CREATE TABLE IF NOT EXISTS does not upgrade existing store catalogs.
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;

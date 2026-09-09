@@ -1,3 +1,7 @@
+## Phase 4.1 upgrade fix
+
+For an existing PostgreSQL database, run `yarn db:migrate`, then `yarn db:check`, and restart the API. This adds the previously missing store activity column without seeding data.
+
 # Phase 4: geolocation and store search
 
 Start with [PHASE4-STORES.md](PHASE4-STORES.md) for current Yarn Classic setup, API examples and tests. The Stores page now has catalog search, optional geolocation, manual coordinates, radius filters and trip selection.

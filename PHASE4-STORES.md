@@ -1,8 +1,12 @@
+## Phase 4.1: existing-database fix
+
+The original Phase 4 archive missed an upgrade step for `stores.is_active`. This can cause a 500 response on store search in older databases. Run `yarn db:migrate`, then `yarn db:check` and restart the API. The migration does not apply seed data.
+
 # Phase 4 — geolocation and store search
 
 Built on `flipscout-phase3-connectors.zip`. All root scripts use Yarn Classic
 workspace commands. No npm workspace commands or workspace protocol dependencies
-are needed. There are no new production dependencies or database migrations.
+are needed. There are no new production dependencies. Existing databases must run the schema migration below to add the store activity flag.
 
 ## Start with Yarn Classic
 
@@ -138,7 +142,14 @@ yarn db:check
 yarn ingest:retailer mock
 ```
 
-Restart the API. No migration was introduced in Phase 4. Bootstrap includes the
+For an existing database, apply the schema upgrade without loading seed data:
+
+```sh
+yarn db:migrate
+yarn db:check
+```
+
+Restart the API. The migration adds `stores.is_active` if missing and preserves existing data. Bootstrap includes the
 existing mock seed; it is not needed on every startup. See PHASE3-CONNECTORS.md
 for importing an authorized retailer source.
 

@@ -19,7 +19,8 @@
     "ingest:due": "yarn workspace @flipscout/api ingest:due",
     "test:postgres": "yarn workspace @flipscout/api test:postgres",
     "test:stores": "yarn workspace @flipscout/api test:stores",
-    "test:stores:api": "yarn workspace @flipscout/api test:stores:api"
+    "test:stores:api": "yarn workspace @flipscout/api test:stores:api",
+    "db:migrate": "yarn workspace @flipscout/api db:migrate"
   },
   "engines": {
     "node": ">=20.9.0"

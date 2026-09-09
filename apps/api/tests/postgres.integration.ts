@@ -25,6 +25,12 @@ test("PostgreSQL: idempotency, cleanup, rollback, audit, locking and due interva
     const adapter = { source, fetchBatch: async () => structuredClone(batch) };
     await runSource(pool, adapter); await runSource(pool, adapter);
     const directory = new PostgresStoreProvider(pool);
+    await pool.query("ALTER TABLE stores DROP COLUMN is_active");
+    await assert.rejects(directory.search(parseStoreQuery(new URLSearchParams())), { code: "42703" });
+    const upgradeSchema = readFileSync(new URL("../../../database/schema.sql", import.meta.url), "utf8");
+    await pool.query(upgradeSchema);
+    await pool.query(upgradeSchema);
+
     const nearby = await directory.search(parseStoreQuery(new URLSearchParams("lat=40&lng=-74&radiusMiles=0.1")));
     assert.equal(nearby.total, 1);
     assert.equal(nearby.stores[0].activeDealCount, 2);

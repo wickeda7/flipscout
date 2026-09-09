@@ -15,7 +15,8 @@
     "ingest:due": "tsx scripts/ingest-retailer.ts --due",
     "test:postgres": "tsx --test tests/postgres.integration.ts",
     "test:stores": "tsx --test tests/stores.test.ts",
-    "test:stores:api": "tsx tests/stores-api.smoke.ts"
+    "test:stores:api": "tsx tests/stores-api.smoke.ts",
+    "db:migrate": "tsx scripts/migrate-db.ts"
   },
   "dependencies": {
     "@flipscout/types": "0.1.0",

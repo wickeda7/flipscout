@@ -1,2 +1,3 @@
-Base: flipscout-phase3-connectors.zip
-SHA-256: badd8d169a817eae936462b5b62b59a5997be456ad254f93aaffe21a71c80758
+Base: retained Phase 4 working copy
+Original delivered archive: flipscout-phase4-geolocation-stores.zip
+Original archive SHA-256: 298ef2c0ed9bf0c96ff270c3b8de165f38ca06286cb31f0f978d88298144a1ca
