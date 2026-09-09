@@ -1,4 +1,6 @@
 import type {
+  StoreInventoryQuery,
+  StoreInventoryResponse,
   StoreSearchQuery,
   StoreSearchResponse,
   AuthResponse,
@@ -35,6 +37,14 @@ export class FlipScoutApiClient {
 
   setAccessToken(token: string | null) {
     this.accessToken = token;
+  }
+
+  async getStoreInventory(id: string, query: StoreInventoryQuery = {}, signal?: AbortSignal): Promise<StoreInventoryResponse> {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined) params.set(key === "latitude" ? "lat" : key === "longitude" ? "lng" : key, String(value));
+    }
+    return this.request<StoreInventoryResponse>(`/v1/stores/${encodeURIComponent(id)}/deals?${params}`, { signal });
   }
 
   async searchStores(query: StoreSearchQuery = {}, signal?: AbortSignal): Promise<StoreSearchResponse> {

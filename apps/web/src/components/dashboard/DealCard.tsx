@@ -20,7 +20,7 @@ function statusClasses(status: Deal["status"]) {
 }
 
 
-export function DealCard({ deal }: { deal: Deal }) {
+export function DealCard({ deal, showDistance = true }: { deal: Deal; showDistance?: boolean }) {
   const { t } = useI18n();
   const discount = Math.round(
     ((deal.retailPrice - deal.clearancePrice) / deal.retailPrice) * 100,
@@ -62,7 +62,7 @@ export function DealCard({ deal }: { deal: Deal }) {
         </span>
         <span className="flex items-center gap-1.5">
           <MapPin size={14} />
-          {deal.distanceMiles} mi
+          {showDistance ? `${deal.distanceMiles.toFixed(1)} mi` : t("find.noDistance")}
         </span>
         <span className="flex items-center gap-1.5">
           <Package2 size={14} />

@@ -17,4 +17,9 @@ for (const suffix of ["lat=91&lng=0", "lat=0", "radiusMiles=25", "limit=101", "o
 }
 const controller = new AbortController(); controller.abort();
 await assert.rejects(client.searchStores({}, controller.signal), { name: "AbortError" });
+const inventory = await client.getStoreInventory(s.id, { latitude: s.latitude, longitude: s.longitude, limit: 1 });
+assert.equal(inventory.store.id, s.id);
+assert.ok(inventory.deals.length <= 1);
+assert.ok(inventory.deals.every(d => d.storeName === s.storeName));
+await assert.rejects(client.getStoreInventory("not-a-store"), { code: "STORE_NOT_FOUND" });
 console.log("Store API smoke checks passed: shared client, pagination, radius, validation, cache policy, cancellation.");

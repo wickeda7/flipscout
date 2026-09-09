@@ -22,6 +22,7 @@ export class MockStoreProvider implements StoreProvider {
       stores.set(id, s);
     }
     const all = [...stores.values()].filter(s =>
+      (!q.storeId || s.id === q.storeId) &&
       (!q.q || [s.storeName, s.retailer, s.city, s.state].some(v => v.toLowerCase().includes(q.q!.toLowerCase()))) &&
       (!q.retailer || s.retailer.toLowerCase() === q.retailer.toLowerCase()) &&
       (!q.source || s.source === q.source) &&

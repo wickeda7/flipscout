@@ -22,6 +22,7 @@ export class PostgresStoreProvider implements StoreProvider {
             )))) END AS "distanceMiles"
         FROM stores s
         WHERE s.is_active = TRUE
+          AND ($10::text IS NULL OR s.id::text = $10)
           AND s.latitude BETWEEN -90 AND 90 AND s.longitude BETWEEN -180 AND 180
           AND ($3::text IS NULL OR s.store_name ILIKE $3 OR s.retailer ILIKE $3 OR s.city ILIKE $3 OR s.state ILIKE $3)
           AND ($4::text IS NULL OR LOWER(s.retailer) = LOWER($4))
@@ -43,7 +44,7 @@ export class PostgresStoreProvider implements StoreProvider {
         ) a ON TRUE
       ) SELECT (SELECT COUNT(*)::int FROM matches) AS total,
         COALESCE((SELECT jsonb_agg(e ORDER BY ${order}) FROM enriched e), '[]'::jsonb) AS stores
-    `, [q.latitude ?? null, q.longitude ?? null, pattern, q.retailer ?? null, q.source ?? null, q.radiusMiles ?? null, q.limit, q.offset, positiveIntegerEnv("INGESTION_STALE_AFTER_MINUTES", 180)]);
+    `, [q.latitude ?? null, q.longitude ?? null, pattern, q.retailer ?? null, q.source ?? null, q.radiusMiles ?? null, q.limit, q.offset, positiveIntegerEnv("INGESTION_STALE_AFTER_MINUTES", 180), q.storeId ?? null]);
     const { total, stores } = result.rows[0];
     return { stores, total, limit: q.limit, offset: q.offset, hasMore: q.offset + q.limit <= 10000 && q.offset + q.limit < total, dataProvider: "postgres" };
   }

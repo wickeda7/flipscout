@@ -1,6 +1,6 @@
 import type { StoreSearchQuery } from "@flipscout/types";
 import { RequestError } from "../security/request-error.js";
-export type ResolvedStoreQuery = StoreSearchQuery & { limit: number; offset: number; sort: "name" | "distance" };
+export type ResolvedStoreQuery = StoreSearchQuery & { storeId?: string; limit: number; offset: number; sort: "name" | "distance" };
 const invalid = () => { throw new RequestError("Invalid store search parameters.", 400, "INVALID_STORE_QUERY"); };
 function numeric(params: URLSearchParams, key: string, min: number, max: number): number | undefined {
   const raw = params.get(key);

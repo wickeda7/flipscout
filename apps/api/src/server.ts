@@ -1,3 +1,4 @@
+import { storeInventory } from "./stores/inventory.js";
 import { parseStoreQuery, parseOrigin } from "./stores/query.js";
 import "dotenv/config";
 import { createServer } from "node:http";
@@ -592,6 +593,15 @@ const server = createServer(async (request, response) => {
       const limit = Number.isFinite(rawLimit) ? rawLimit : 20;
       const runs = await ingestionStatusProvider.listRuns(limit);
       writeJson(response, 200, { runs });
+      return;
+    }
+
+    const inventoryMatch = url.pathname.match(/^\/v1\/stores\/([^/]+)\/deals$/);
+    if (request.method === "GET" && inventoryMatch) {
+      let id: string;
+      try { id = decodeURIComponent(inventoryMatch[1]); }
+      catch { throw new RequestError("Invalid store ID.", 400, "INVALID_STORE_ID"); }
+      writeJson(response, 200, await storeInventory(id, url.searchParams, storeProvider, dealProvider));
       return;
     }
 

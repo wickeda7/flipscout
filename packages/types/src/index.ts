@@ -274,3 +274,17 @@ export interface StoreSearchResponse {
   hasMore: boolean;
   dataProvider: "mock" | "postgres";
 }
+
+export interface StoreInventoryQuery {
+  latitude?: number;
+  longitude?: number;
+  limit?: number;
+  offset?: number;
+}
+export interface StoreInventoryResponse {
+  store: StoreSummary;
+  deals: Deal[];
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+}

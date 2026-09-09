@@ -93,3 +93,39 @@ test("PostgreSQL search uses bound values, escaped patterns and whitelisted orde
   assert.ok(!sql.includes("50%")); assert.ok(sql.includes("LEFT JOIN LATERAL"));
   assert.equal(result.total, 2); assert.equal(result.hasMore, true);
 });
+
+test("store inventory isolates stores, paginates and excludes unavailable deals", async () => {
+  const { MockDealProvider } = await import("../src/providers/mock-deal-provider.js");
+  const { storeInventory } = await import("../src/stores/inventory.js");
+  const rows = Array.from({ length: 9 }, (_, n) => ({ ...mockDeals[0], id: `fixture-${n}`, buyScore: 90 - n }));
+  rows[6].inventory = 0;
+  rows[7].updatedMinutesAgo = 999999;
+  rows[8].isActive = false;
+  const other = { ...mockDeals[1], id: "other-store", storeName: "Different store" };
+  const stores = new MockStoreProvider([...rows, other]);
+  const deals = new MockDealProvider([...rows, other]);
+  const catalog = await stores.search(query());
+  const s = catalog.stores.find(s => s.storeName === rows[0].storeName)!;
+  const first = await storeInventory(s.id, new URLSearchParams("limit=3"), stores, deals);
+  const second = await storeInventory(s.id, new URLSearchParams("limit=3&offset=3"), stores, deals);
+  assert.equal(first.store.activeDealCount, 6); assert.equal(first.deals.length, 3); assert.equal(first.hasMore, true);
+  assert.equal(second.deals.length, 3); assert.equal(second.hasMore, false);
+  assert.equal(new Set([...first.deals, ...second.deals].map(d => d.id)).size, 6);
+  assert.ok(first.deals.every(d => d.storeName === rows[0].storeName));
+  assert.equal(first.store.distanceMiles, null);
+});
+
+test("store inventory handles unknown stores, invalid queries and location", async () => {
+  const { MockDealProvider } = await import("../src/providers/mock-deal-provider.js");
+  const { storeInventory } = await import("../src/stores/inventory.js");
+  const stores = new MockStoreProvider(), deals = new MockDealProvider();
+  await assert.rejects(storeInventory("unknown", new URLSearchParams(), stores, deals), { status: 404 });
+  await assert.rejects(storeInventory("", new URLSearchParams(), stores, deals), { status: 400 });
+  const s = (await stores.search(query())).stores[0];
+  for (const params of ["limit=0", "offset=-1", "lat=0", "q=ignored", "sort=distance"])
+    await assert.rejects(storeInventory(s.id, new URLSearchParams(params), stores, deals), { status: 400 });
+  const result = await storeInventory(s.id, new URLSearchParams(`lat=${s.latitude}&lng=${s.longitude}`), stores, deals);
+  assert.equal(result.store.distanceMiles, 0); assert.ok(result.deals.every(d => d.distanceMiles === 0));
+  const empty = await storeInventory(s.id, new URLSearchParams("offset=10000"), stores, deals);
+  assert.deepEqual(empty.deals, []); assert.equal(empty.hasMore, false);
+});

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { MapPin, Navigation, Search } from "lucide-react";
 import type { GeoLocation, StoreSearchQuery, StoreSearchResponse, StoreSummary } from "@flipscout/types";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { StoreInventory } from "@/components/stores/StoreInventory";
 import { RoutePlanner } from "@/components/stores/RoutePlanner";
 import type { StoreOpportunity } from "@/lib/store-planning";
 import { flipScoutApi } from "@/lib/api";
@@ -19,6 +20,7 @@ function opportunity(s: StoreSummary): StoreOpportunity {
 
 export default function StoresPage() {
   const { t } = useI18n();
+  const [inventoryStore, setInventoryStore] = useState<string | null>(null);
   const [origin, setOrigin] = useState<GeoLocation | null>(null);
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -55,7 +57,7 @@ export default function StoresPage() {
       radiusMiles: nextOrigin ? radius : undefined, sort: nextOrigin ? nextSort : "name", limit: 12, offset: 0 });
   }
   function applyOrigin(point: GeoLocation | null) {
-    locationVersion.current++; setLocating(false); setLocationError(null); setOrigin(point); setTrip([]);
+    locationVersion.current++; setLocating(false); setLocationError(null); setOrigin(point); setTrip([]); setInventoryStore(null);
     setLatitude(point ? String(point.latitude) : ""); setLongitude(point ? String(point.longitude) : "");
     const nextSort = point ? "distance" : "name"; setSort(nextSort); search(point, nextSort);
   }
@@ -132,6 +134,7 @@ export default function StoresPage() {
                     <p className="mt-1 text-sm text-neutral-400">{store.city}, {store.state}</p>
                     <p className="mt-4 flex items-center gap-2 text-sm"><MapPin size={15} />{store.distanceMiles === null ? t("find.noDistance") : `${store.distanceMiles.toFixed(1)} ${t("find.straight")}`}</p>
                     <p className="my-4 text-sm text-neutral-400">{store.activeDealCount ? `${t("find.deals")}: ${store.activeDealCount}` : t("find.noDeals")}</p>
+                    <button type="button" className={`${buttonClass} mb-3`} onClick={() => setInventoryStore(store.id)}>{t("inventory.open")}</button>
                     <button type="button" aria-pressed={added} disabled={!origin || (!added && trip.length >= 10)} onClick={() => toggleTrip(store)} className={`${buttonClass} mt-auto ${added ? "border-emerald-400 text-emerald-300" : ""}`}>{t(added ? "find.remove" : "find.add")}</button>
                   </article>;
                 })}
@@ -143,6 +146,7 @@ export default function StoresPage() {
               </nav>
             </>}
           </div>
+          {inventoryStore && <StoreInventory key={inventoryStore} storeId={inventoryStore} origin={origin} onClose={() => setInventoryStore(null)} />}
           <p className="my-4 text-xs text-neutral-500">{t("find.inventory")}</p>
           <p className="my-4 text-sm text-neutral-400">{t(trip.length >= 10 ? "find.tripLimit" : "find.tripHint")}</p>
           {origin && trip.length > 0 && <RoutePlanner key={`${origin.latitude},${origin.longitude}:${trip.map(s => s.id).join("|")}`} stores={trip.map(opportunity)} initialOrigin={origin} />}

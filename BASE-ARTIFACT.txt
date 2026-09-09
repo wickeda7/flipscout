@@ -1,3 +1,1 @@
-Base: retained Phase 4 working copy
-Original delivered archive: flipscout-phase4-geolocation-stores.zip
-Original archive SHA-256: 298ef2c0ed9bf0c96ff270c3b8de165f38ca06286cb31f0f978d88298144a1ca
+Base: retained Phase 4.1 working copy from flipscout-phase4-1-store-search-fix.zip

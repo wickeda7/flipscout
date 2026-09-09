@@ -1,3 +1,7 @@
+# Phase 4.2: store inventory
+
+See [PHASE4-2-INVENTORY.md](PHASE4-2-INVENTORY.md) for the latest feature, shared API and exact Yarn commands.
+
 ## Phase 4.1 upgrade fix
 
 For an existing PostgreSQL database, run `yarn db:migrate`, then `yarn db:check`, and restart the API. This adds the previously missing store activity column without seeding data.

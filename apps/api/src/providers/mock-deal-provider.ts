@@ -1,3 +1,6 @@
+import { distanceMiles } from "@flipscout/core";
+import { mockStoreId } from "../stores/mock-store-provider.js";
+import { positiveIntegerEnv } from "../security/config.js";
 import type { Deal } from "@flipscout/types";
 import { mockDeals } from "../mock-deals.js";
 import type { DealProvider, DealQuery } from "./deal-provider.js";
@@ -7,10 +10,13 @@ function includes(value: string, query: string) {
 }
 
 export class MockDealProvider implements DealProvider {
+  constructor(private readonly deals: Deal[] = mockDeals) {}
   async listDeals(query: DealQuery = {}): Promise<Deal[]> {
     const { q, retailer, category } = query;
 
-    return mockDeals.filter((deal) => {
+    const result = this.deals.filter((deal) => {
+      if (query.storeId && (mockStoreId(deal) !== query.storeId || deal.isActive === false || deal.inventory <= 0 || deal.updatedMinutesAgo > positiveIntegerEnv("INGESTION_STALE_AFTER_MINUTES", 180))) return false;
+      if (query.source && query.source !== (deal.source ?? "mock")) return false;
       if (
         q &&
         ![
@@ -31,10 +37,13 @@ export class MockDealProvider implements DealProvider {
 
       return true;
     });
+    if (query.storeId) result.sort((a, b) => b.buyScore - a.buyScore || b.estimatedProfit - a.estimatedProfit || a.id.localeCompare(b.id));
+    const page = query.limit === undefined ? result : result.slice(query.offset ?? 0, (query.offset ?? 0) + query.limit);
+    return page.map(deal => query.originLatitude === undefined ? { ...deal } : { ...deal, distanceMiles: Number(distanceMiles({ latitude: query.originLatitude, longitude: query.originLongitude! }, deal).toFixed(1)) });
   }
 
   async getDeal(id: string): Promise<Deal | null> {
-    return mockDeals.find((deal) => deal.id === id) ?? null;
+    return this.deals.find((deal) => deal.id === id) ?? null;
   }
 
   async health() {

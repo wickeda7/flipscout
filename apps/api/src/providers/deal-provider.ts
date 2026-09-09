@@ -1,6 +1,9 @@
 import type { Deal } from "@flipscout/types";
 
 export interface DealQuery {
+  storeId?: string;
+  limit?: number;
+  offset?: number;
   q?: string;
   retailer?: string;
   category?: string;

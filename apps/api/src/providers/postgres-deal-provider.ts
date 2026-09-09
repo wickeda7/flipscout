@@ -1,3 +1,4 @@
+import { positiveIntegerEnv } from "../security/config.js";
 import { Pool } from "pg";
 import type { Deal } from "@flipscout/types";
 import type { DealProvider, DealQuery } from "./deal-provider.js";
@@ -113,6 +114,18 @@ export class PostgresDealProvider implements DealProvider {
       where.push(`d.source = $${values.length}`);
     }
 
+    if (query.storeId) {
+      values.push(query.storeId);
+      where.push(`s.id::text = $${values.length}`, "s.is_active = TRUE", "d.inventory > 0");
+      values.push(positiveIntegerEnv("INGESTION_STALE_AFTER_MINUTES", 180));
+      where.push(`COALESCE(d.source_updated_at, d.updated_at) >= NOW() - ($${values.length} * INTERVAL '1 minute')`);
+    }
+    let pagination = "";
+    if (query.limit !== undefined) {
+      values.push(query.limit, query.offset ?? 0);
+      pagination = `LIMIT $${values.length - 1} OFFSET $${values.length}`;
+    }
+
     const result = await this.pool.query<DealRow>(
       `
       SELECT
@@ -128,12 +141,12 @@ export class PostgresDealProvider implements DealProvider {
           THEN 0::double precision
           ELSE (
             3958.7613 * 2 * ASIN(
-              SQRT(
+              SQRT(LEAST(1.0, GREATEST(0.0,
                 POWER(SIN(RADIANS(s.latitude - $1::double precision) / 2), 2)
                 + COS(RADIANS($1::double precision))
                 * COS(RADIANS(s.latitude))
                 * POWER(SIN(RADIANS(s.longitude - $2::double precision) / 2), 2)
-              )
+              )))
             )
           )
         END AS distance_miles,
@@ -163,7 +176,8 @@ export class PostgresDealProvider implements DealProvider {
       FROM deals d
       JOIN stores s ON s.id = d.store_id
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-      ORDER BY d.buy_score DESC, d.estimated_profit DESC
+      ORDER BY d.buy_score DESC, d.estimated_profit DESC, d.id
+      ${pagination}
       `,
       values,
     );

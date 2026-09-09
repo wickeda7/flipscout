@@ -4,6 +4,17 @@ export type SupportedLocale = (typeof supportedLocales)[number];
 export const defaultLocale: SupportedLocale = "en";
 
 const en = {
+  "inventory.open": "View store deals",
+  "inventory.title": "Store deals",
+  "inventory.close": "Close deals",
+  "inventory.description": "Recent in-stock deals, ranked by BUY score. Confirm availability before traveling.",
+  "inventory.loading": "Loading store deals…",
+  "inventory.failed": "Could not load store deals. Try again.",
+  "inventory.missing": "This store is no longer available in the catalog.",
+  "inventory.empty": "No recent in-stock deals on this page.",
+  "inventory.retry": "Retry",
+  "inventory.pages": "Store deals pages",
+
   "map.unavailable": "Map preview unavailable",
   "map.help": "You can still plan your trip using the estimated distances and stop list.",
   "map.label": "Interactive route map",
@@ -402,6 +413,17 @@ const en = {
 } as const;
 
 const vi: Record<keyof typeof en, string> = {
+  "inventory.open": "Xem ưu đãi tại cửa hàng",
+  "inventory.title": "Ưu đãi tại cửa hàng",
+  "inventory.close": "Đóng danh sách ưu đãi",
+  "inventory.description": "Ưu đãi gần đây còn hàng, xếp theo điểm BUY. Hãy xác nhận còn hàng trước khi đi.",
+  "inventory.loading": "Đang tải ưu đãi tại cửa hàng…",
+  "inventory.failed": "Không thể tải ưu đãi tại cửa hàng. Hãy thử lại.",
+  "inventory.missing": "Cửa hàng này không còn trong danh mục.",
+  "inventory.empty": "Không có ưu đãi gần đây còn hàng trên trang này.",
+  "inventory.retry": "Thử lại",
+  "inventory.pages": "Các trang ưu đãi tại cửa hàng",
+
   "map.unavailable": "Không có bản đồ xem trước",
   "map.help": "Bạn vẫn có thể lập chuyến đi bằng khoảng cách ước tính và danh sách điểm dừng.",
   "map.label": "Bản đồ tuyến đường tương tác",
