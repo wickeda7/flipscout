@@ -1,1 +1,1 @@
-Base: retained Phase 4.2 working copy from flipscout-phase4-2-store-inventory.zip
+Base: retained Phase 4.4 working copy from flipscout-phase4-4-mock-inventory.zip

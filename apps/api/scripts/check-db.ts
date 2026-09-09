@@ -55,8 +55,8 @@ async function run() {
   const missing = required.filter((name) => !tableNames.has(name));
 
   const requiredColumns: Record<string, string[]> = {
-    stores: ["id", "source", "store_name", "retailer", "city", "state", "latitude", "longitude", "is_active"],
-    deals: ["store_id", "is_active", "inventory", "estimated_profit", "buy_score", "source_updated_at", "updated_at"],
+    stores: ["id", "source", "store_name", "retailer", "city", "state", "latitude", "longitude", "is_active", "last_seen_at", "source_updated_at", "updated_at"],
+    deals: ["store_id", "is_active", "inventory", "estimated_profit", "buy_score", "source_updated_at", "last_seen_at", "updated_at"],
   };
   const columns = await pool.query<{ table_name: string; column_name: string }>(`
     SELECT table_name, column_name FROM information_schema.columns

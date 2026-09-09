@@ -160,7 +160,26 @@ function toStatus(label: string): DealStatus {
   return "skip";
 }
 
-export const mockDeals: Deal[] = rawDeals.map((deal) => {
+// Additional synthetic demo items make category filters and pagination usable.
+const demoCatalog: RawDeal[] = [
+  ...rawDeals,
+  ...rawDeals.flatMap((store, storeIndex) => [
+    ["Cordless Drill Kit", "Tools", 49, 119],
+    ["Socket Set", "Tools", 19, 55],
+    ["Bluetooth Speaker", "Electronics", 15, 45],
+    ["Desk Lamp", "Home", 12, 35],
+    ["Coffee Maker", "Kitchen", 24, 69],
+    ["Storage Organizer", "Home", 9, 29],
+    ["USB Charging Hub", "Electronics", 8, 25],
+  ].map(([name, category, price, resale], index) => ({
+    ...store, id: `demo-${storeIndex + 1}-${index + 1}`,
+    productName: `Demo ${name}`, brand: "Demo Brand", category: String(category),
+    retailPrice: Number(resale) * 1.4, clearancePrice: Number(price), resalePrice: Number(resale),
+    inventory: index + 2, updatedMinutesAgo: 0, shippingCost: 5,
+  }))),
+];
+
+export const mockDeals: Deal[] = demoCatalog.map((deal) => {
   const discountPercent =
     ((deal.retailPrice - deal.clearancePrice) / deal.retailPrice) * 100;
 
@@ -182,6 +201,8 @@ export const mockDeals: Deal[] = rawDeals.map((deal) => {
 
   return {
     ...deal,
+    source: "mock",
+    isActive: true,
     estimatedProfit: profit.netProfit,
     roi: profit.roiPercent,
     margin: profit.marginPercent,

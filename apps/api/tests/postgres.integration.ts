@@ -64,3 +64,29 @@ test("PostgreSQL: idempotency, cleanup, rollback, audit, locking and due interva
     await admin.end();
   }
 });
+
+test("legacy store schema upgrades before demo seeding", async () => {
+  assert.ok(process.env.TEST_DATABASE_URL, "Set TEST_DATABASE_URL to a disposable PostgreSQL database");
+  const { seedDemoInventory } = await import("../src/ingestion/seed-demo.js");
+  const schema = "demo_upgrade_" + randomUUID().replaceAll("-", "");
+  const admin = new Pool({ connectionString: process.env.TEST_DATABASE_URL });
+  let pool: Pool | undefined;
+  try {
+    await admin.query(`CREATE SCHEMA ${schema}`);
+    pool = new Pool({ connectionString: process.env.TEST_DATABASE_URL, max: 2, options: `-c search_path=${schema}` });
+    const sql = readFileSync(new URL("../../../database/schema.sql", import.meta.url), "utf8");
+    await pool.query(sql);
+    await pool.query("ALTER TABLE stores DROP COLUMN last_seen_at");
+    await assert.rejects(seedDemoInventory(pool), { code: "42703" });
+    await pool.query(sql);
+    await pool.query(sql);
+    assert.deepEqual(await seedDemoInventory(pool), { source: "mock", stores: 6, deals: 48 });
+    await seedDemoInventory(pool);
+    assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM stores")).rows[0].n, 6);
+    assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM deals WHERE is_active")).rows[0].n, 48);
+  } finally {
+    await pool?.end();
+    await admin.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
+    await admin.end();
+  }
+});

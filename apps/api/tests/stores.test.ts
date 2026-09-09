@@ -165,3 +165,19 @@ test("inventory sorting is applied before pagination with stable tie breakers", 
     assert.equal(first.hasMore, true); assert.equal(second.hasMore, false);
   }
 });
+
+test("default mock inventory includes eight deals per store and multiple categories", async () => {
+  const { MockDealProvider } = await import("../src/providers/mock-deal-provider.js");
+  const { storeInventory } = await import("../src/stores/inventory.js");
+  const stores = new MockStoreProvider(), deals = new MockDealProvider();
+  const catalog = await stores.search(query());
+  assert.equal(catalog.total, 6);
+  assert.equal(mockDeals.length, 48);
+  for (const store of catalog.stores) {
+    const first = await storeInventory(store.id, new URLSearchParams("limit=6"), stores, deals);
+    const second = await storeInventory(store.id, new URLSearchParams("limit=6&offset=6"), stores, deals);
+    assert.equal(first.deals.length, 6); assert.equal(first.hasMore, true);
+    assert.equal(second.deals.length, 2); assert.equal(second.hasMore, false);
+    assert.equal(new Set([...first.deals, ...second.deals].map(d => d.category)).size, 4);
+  }
+});

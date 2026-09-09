@@ -20,7 +20,8 @@
     "test:postgres": "yarn workspace @flipscout/api test:postgres",
     "test:stores": "yarn workspace @flipscout/api test:stores",
     "test:stores:api": "yarn workspace @flipscout/api test:stores:api",
-    "db:migrate": "yarn workspace @flipscout/api db:migrate"
+    "db:migrate": "yarn workspace @flipscout/api db:migrate",
+    "db:seed:demo": "yarn workspace @flipscout/api db:seed:demo"
   },
   "engines": {
     "node": ">=20.9.0"

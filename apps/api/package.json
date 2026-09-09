@@ -16,7 +16,8 @@
     "test:postgres": "tsx --test tests/postgres.integration.ts",
     "test:stores": "tsx --test tests/stores.test.ts",
     "test:stores:api": "tsx tests/stores-api.smoke.ts",
-    "db:migrate": "tsx scripts/migrate-db.ts"
+    "db:migrate": "tsx scripts/migrate-db.ts",
+    "db:seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@flipscout/types": "0.1.0",

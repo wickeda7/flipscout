@@ -1,3 +1,11 @@
+# Demo seed migration fix
+
+See [DEMO-SEED-FIX.md](DEMO-SEED-FIX.md) for the stores.last_seen_at upgrade and commands.
+
+# Mock inventory: 48 demo deals
+
+See [MOCK-INVENTORY.md](MOCK-INVENTORY.md) for mock-mode setup and troubleshooting. Mock mode needs no database seed.
+
 # Phase 4.3: inventory filters and sorting
 
 See [PHASE4-3-FILTERS.md](PHASE4-3-FILTERS.md) for current features and Yarn setup/test commands.

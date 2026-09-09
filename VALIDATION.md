@@ -1,3 +1,3 @@
-# Phase 4.3 validation
+# Demo seed migration hotfix validation
 
-17 store/location tests passed, including the new filters and sorting cases. API type-check and production build results are recorded in PHASE4-3-FILTERS.md. Actual search and ordering queries passed in embedded PostgreSQL (PGlite), including literal wildcard handling and all four sort modes. No new manual browser or live HTTP tests were performed in this step. The standalone PostgreSQL suite remains opt-in.
+Embedded PostgreSQL upgrade/seed regression passed: removed stores.last_seen_at, reapplied the schema twice, then seeded and refreshed 6 stores / 48 deals without account insertion. API type-check passed. A standalone PostgreSQL regression is included but requires TEST_DATABASE_URL and was not executed here. No web source changed.
