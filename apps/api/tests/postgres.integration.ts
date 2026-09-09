@@ -1,3 +1,5 @@
+import { PostgresStoreProvider } from "../src/stores/postgres-store-provider.js";
+import { parseStoreQuery } from "../src/stores/query.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -22,6 +24,15 @@ test("PostgreSQL: idempotency, cleanup, rollback, audit, locking and due interva
       deals: ["one", "two"].map(externalDealId => ({ source, externalDealId, externalStoreId: "store", productName: "Fixture", brand: "Fixture", category: "Test", retailPrice: 100, clearancePrice: 25, inventory: 1, sourceUpdatedAt: new Date().toISOString() })) };
     const adapter = { source, fetchBatch: async () => structuredClone(batch) };
     await runSource(pool, adapter); await runSource(pool, adapter);
+    const directory = new PostgresStoreProvider(pool);
+    const nearby = await directory.search(parseStoreQuery(new URLSearchParams("lat=40&lng=-74&radiusMiles=0.1")));
+    assert.equal(nearby.total, 1);
+    assert.equal(nearby.stores[0].activeDealCount, 2);
+    assert.equal(nearby.stores[0].distanceMiles, 0);
+    const emptyPage = await directory.search(parseStoreQuery(new URLSearchParams("offset=10000")));
+    assert.equal(emptyPage.total, 1);
+    assert.deepEqual(emptyPage.stores, []);
+
     assert.equal((await pool.query("SELECT count(*)::int AS n FROM deals")).rows[0].n, 2);
     batch.deals.pop(); await runSource(pool, adapter);
     assert.equal((await pool.query("SELECT count(*)::int AS n FROM deals WHERE is_active")).rows[0].n, 2);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import type { StoreOpportunity } from "@/lib/store-planning";
 
 interface RouteMapProps {
@@ -19,13 +20,15 @@ export function RouteMap({
   origin,
   geometry,
 }: RouteMapProps) {
+  const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<import("mapbox-gl").Map | null>(null);
   const markersRef = useRef<import("mapbox-gl").Marker[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState("");
 
-  const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+  const configuredToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+  const token = configuredToken?.startsWith("your_") ? undefined : configuredToken;
 
   useEffect(() => {
     if (!token || !containerRef.current) return;
@@ -154,6 +157,7 @@ export function RouteMap({
         stores,
         origin,
         markersRef,
+        { start: t("map.start"), profit: t("dashboard.potentialProfit") },
       );
 
       fitRoute(mapboxgl, map, stores, origin, geometry);
@@ -172,6 +176,7 @@ export function RouteMap({
     origin.latitude,
     origin.longitude,
     geometry,
+    t,
   ]);
 
   if (!token) {
@@ -180,24 +185,8 @@ export function RouteMap({
         <Header live={Boolean(geometry?.length)} />
         <div className="flex h-[430px] items-center justify-center px-6">
           <div className="max-w-md text-center">
-            <div className="text-base font-semibold text-white">
-              Mapbox map token required
-            </div>
-            <p className="mt-2 text-sm leading-6 text-neutral-500">
-              Add{" "}
-              <code className="rounded bg-black/40 px-1.5 py-0.5 text-neutral-300">
-                NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
-              </code>{" "}
-              to <code className="text-neutral-300">.env.local</code>, then
-              restart the Next.js dev server.
-            </p>
-            <p className="mt-3 text-xs leading-5 text-neutral-600">
-              The server-side{" "}
-              <code className="text-neutral-400">
-                MAPBOX_ACCESS_TOKEN
-              </code>{" "}
-              remains separate and is used by the routing endpoint.
-            </p>
+            <div className="text-base font-semibold text-white">{t("map.unavailable")}</div>
+            <p className="mt-2 text-sm leading-6 text-neutral-500">{t("map.help")}</p>
           </div>
         </div>
       </div>
@@ -212,18 +201,18 @@ export function RouteMap({
         <div
           ref={containerRef}
           className="h-[430px] w-full bg-neutral-900"
-          aria-label="Interactive Mapbox route map"
+          aria-label={t("map.label")}
         />
 
         {!mapReady && !mapError && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-neutral-950/40 text-sm text-neutral-500">
-            Loading Mapbox…
+            {t("map.loading")}
           </div>
         )}
 
         {mapError && (
           <div className="absolute inset-x-4 bottom-4 rounded-xl border border-amber-500/20 bg-neutral-950/95 p-3 text-xs leading-5 text-amber-200 shadow-xl">
-            {mapError}
+            {t("map.unavailable")}
           </div>
         )}
       </div>
@@ -232,13 +221,14 @@ export function RouteMap({
 }
 
 function Header({ live }: { live: boolean }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
       <div className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-        Route preview
+        {t("map.preview")}
       </div>
       <div className="text-xs text-neutral-600">
-        {live ? "Mapbox live road route" : "Mapbox estimated route"}
+        {t(live ? "map.live" : "map.estimate")}
       </div>
     </div>
   );
@@ -277,6 +267,7 @@ function addMarkers(
   stores: StoreOpportunity[],
   origin: { latitude: number; longitude: number },
   markerRef: { current: import("mapbox-gl").Marker[] },
+  labels: { start: string; profit: string },
 ) {
   const startEl = document.createElement("div");
   startEl.className =
@@ -291,7 +282,7 @@ function addMarkers(
       .setLngLat([origin.longitude, origin.latitude])
       .setPopup(
         new mapboxgl.Popup({ offset: 20 }).setHTML(
-          "<strong>Trip start</strong>",
+          `<strong>${escapeHtml(labels.start)}</strong>`,
         ),
       )
       .addTo(map),
@@ -317,7 +308,7 @@ function addMarkers(
             `<div style="min-width:180px">` +
               `<strong>${escapeHtml(store.storeName)}</strong><br/>` +
               `${escapeHtml(store.city)}, ${escapeHtml(store.state)}<br/>` +
-              `$${store.totalPotentialProfit.toFixed(0)} potential profit` +
+              `$${store.totalPotentialProfit.toFixed(0)} ${escapeHtml(labels.profit)}` +
               `</div>`,
           ),
         )

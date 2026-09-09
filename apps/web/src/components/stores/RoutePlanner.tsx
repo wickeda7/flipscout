@@ -43,19 +43,19 @@ interface LiveRouteResult {
   geometry: [number, number][];
 }
 
-export function RoutePlanner({ stores }: { stores: StoreOpportunity[] }) {
+export function RoutePlanner({ stores, initialOrigin }: { stores: StoreOpportunity[]; initialOrigin?: { latitude: number; longitude: number } }) {
   const { t } = useI18n();
   const [selectedKeys, setSelectedKeys] = useState<string[]>(
-    stores.slice(0, Math.min(3, stores.length)).map((store) => store.key),
+    (initialOrigin ? stores : stores.slice(0, Math.min(3, stores.length))).map((store) => store.key),
   );
   const [mpg, setMpg] = useState(25);
   const [gasPrice, setGasPrice] = useState(3.5);
   const [roadMultiplier, setRoadMultiplier] = useState(1.2);
   const [originLatitude, setOriginLatitude] = useState(
-    DEFAULT_ORIGIN.latitude,
+    initialOrigin?.latitude ?? DEFAULT_ORIGIN.latitude,
   );
   const [originLongitude, setOriginLongitude] = useState(
-    DEFAULT_ORIGIN.longitude,
+    initialOrigin?.longitude ?? DEFAULT_ORIGIN.longitude,
   );
   const [liveRoute, setLiveRoute] = useState<LiveRouteResult | null>(null);
   const [liveError, setLiveError] = useState("");

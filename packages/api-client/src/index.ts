@@ -1,4 +1,6 @@
 import type {
+  StoreSearchQuery,
+  StoreSearchResponse,
   AuthResponse,
   AuthUser,
   ChangePasswordRequest,
@@ -33,6 +35,14 @@ export class FlipScoutApiClient {
 
   setAccessToken(token: string | null) {
     this.accessToken = token;
+  }
+
+  async searchStores(query: StoreSearchQuery = {}, signal?: AbortSignal): Promise<StoreSearchResponse> {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined) params.set(key === "latitude" ? "lat" : key === "longitude" ? "lng" : key, String(value));
+    }
+    return this.request<StoreSearchResponse>(`/v1/stores?${params}`, { signal });
   }
 
   async listDeals(query: {

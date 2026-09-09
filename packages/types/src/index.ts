@@ -237,3 +237,40 @@ export interface IngestionStatusResponse {
   staleAfterMinutes: number;
   sources: IngestionSourceStatus[];
 }
+
+/** Coordinates are request-scoped; store search does not save user location. */
+export interface GeoLocation { latitude: number; longitude: number }
+export interface StoreSearchQuery {
+  q?: string;
+  retailer?: string;
+  source?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusMiles?: number;
+  sort?: "name" | "distance";
+  limit?: number;
+  offset?: number;
+}
+export interface StoreSummary extends GeoLocation {
+  id: string;
+  source: RetailerSource;
+  retailer: string;
+  storeName: string;
+  city: string;
+  state: string;
+  /** Straight-line distance; null when no origin is supplied. */
+  distanceMiles: number | null;
+  activeDealCount: number;
+  unitCount: number;
+  totalPotentialProfit: number;
+  averageBuyScore: number;
+  strongBuyCount: number;
+}
+export interface StoreSearchResponse {
+  stores: StoreSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+  dataProvider: "mock" | "postgres";
+}

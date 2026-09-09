@@ -1,3 +1,7 @@
+# Phase 4: geolocation and store search
+
+Start with [PHASE4-STORES.md](PHASE4-STORES.md) for current Yarn Classic setup, API examples and tests. The Stores page now has catalog search, optional geolocation, manual coordinates, radius filters and trip selection.
+
 # Latest Phase 3 step
 
 See [PHASE3-CONNECTORS.md](PHASE3-CONNECTORS.md) for the configurable HTTP/JSON connector, current setup/test commands, scheduling, and snapshot guarantees. See [VALIDATION.md](VALIDATION.md) for executed checks. The sections below describe prior milestones.
@@ -32,7 +36,7 @@ backend. Both consume the same FlipScout API and database-backed services.
 From the repository root:
 
 ```bash
-npm install
+yarn install --frozen-lockfile
 ```
 
 Create `apps/api/.env` from `apps/api/.env.example`.
@@ -42,13 +46,13 @@ Create `apps/web/.env.local` from `apps/web/.env.example`.
 Run the API in terminal 1:
 
 ```bash
-npm run dev:api
+yarn dev:api
 ```
 
 Run the web app in terminal 2:
 
 ```bash
-npm run dev:web
+yarn dev:web
 ```
 
 Defaults:

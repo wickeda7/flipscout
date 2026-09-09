@@ -1,3 +1,6 @@
+import type { StoreProvider } from "../stores/store-provider.js";
+import { MockStoreProvider } from "../stores/mock-store-provider.js";
+import { PostgresStoreProvider } from "../stores/postgres-store-provider.js";
 import { Pool } from "pg";
 import type { AuthProvider } from "./auth-provider.js";
 import { MemoryAuthProvider } from "./memory-auth-provider.js";
@@ -20,6 +23,7 @@ export function createProviders(): {
   watchlistProvider: WatchlistProvider;
   authProvider: AuthProvider;
   ingestionStatusProvider: IngestionStatusProvider;
+  storeProvider: StoreProvider;
 } {
   const requested = (process.env.DATA_PROVIDER ?? "mock").toLowerCase();
 
@@ -43,6 +47,7 @@ export function createProviders(): {
 
     return {
       name: "postgres",
+      storeProvider: new PostgresStoreProvider(pool),
       dealProvider: new PostgresDealProvider(pool),
       watchlistProvider: new PostgresWatchlistProvider(pool),
       authProvider: new PostgresAuthProvider(pool),
@@ -52,6 +57,7 @@ export function createProviders(): {
 
   return {
     name: "mock",
+    storeProvider: new MockStoreProvider(),
     dealProvider: new MockDealProvider(),
     watchlistProvider: new MemoryWatchlistProvider(),
     authProvider: new MemoryAuthProvider(),

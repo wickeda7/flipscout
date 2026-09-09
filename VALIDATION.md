@@ -1,31 +1,36 @@
-# Validation for Phase 3 connectors
+# Phase 4 validation
 
-Executed with Node 22.22.2 and Yarn Classic 1.22.22:
+Base: flipscout-phase3-connectors.zip. Node 22.22.2 / Yarn Classic 1.22.22.
 
-- `yarn install --non-interactive`: passed; generated and included yarn.lock.
-- `yarn typecheck:api`: passed, including ingestion code, scripts and tests.
-- `yarn test:connectors`: 18 tests passed, zero failures or skips.
-- `yarn build:web`: passed, including TypeScript and all 12 prerendered pages.
-- `RETAILER_SOURCES_FILE=config/retailer-sources.example.json yarn ingest:check`:
-  passed; example reported disabled without network or database calls.
-- Package dependency check: no `workspace:*` protocols.
-- Original archive comparison: existing database schema, shared API client,
-  EN/VI translations, scoring implementation and mobile scaffold preserved.
-- Archive integrity and exclusion checks performed during packaging.
+Passed:
+- yarn typecheck:api (includes scripts and tests).
+- yarn test:stores: 13 tests, covering search validation, geographic boundaries,
+  radius/sorting/pagination, empty/stale inventory, manual coordinates and browser
+  location success/error handling with injected geolocation callbacks.
+- yarn test:connectors: 18 regression tests.
+- yarn test:stores:api against a running mock API: shared client, actual HTTP
+  pagination/radius search, malformed parameters, no-store cache and cancellation.
+- yarn build:web --webpack: production compilation, TypeScript, all 12 static pages.
+- Actual store-search SQL in embedded PostgreSQL (PGlite, temporary QA dependency
+  outside the deliverable): catalog, radius/distance, empty pages with total,
+  literal wildcard escaping, stores without deals, zero coordinates and inactive
+  store exclusion. No production dependency was added.
+- Browser checks: loaded the store catalog without assumed coordinates, entered
+  sample Lake Mary coordinates, verified distance sorting and selected a store;
+  the trip planner received the same origin and produced a local route estimate.
+- Root scripts and guides use Yarn, with no npm run/install commands remaining.
+- Archive integrity, dependency protocol and generated-file exclusions checked.
 
-The connector suite uses a real local HTTP server for successful requests,
-timeouts and redirects. Other HTTP cases use injected responses. Database
-transaction/audit/scheduler assertions use query doubles; they do not prove
-PostgreSQL SQL execution or cross-process lock behavior.
+Limitations:
+- Default Turbopack build hit the local execution environment's child-process
+  port-binding restriction. Webpack production build passed instead.
+- Standalone PostgreSQL integration tests were type-checked but not executed.
+  The embedded PostgreSQL SQL checks do not validate remote connections,
+  concurrency, pooling or production performance.
+- A real device location permission was not requested; permission/error behavior
+  was tested with injected callbacks and manual coordinates in the browser.
+- EN/VI translations are type-checked for matching keys. Currency and distances
+  remain USD and miles. No external geocoder or real retailer service was called.
+- No Mapbox credentials were used; live road routing/map rendering is unverified.
 
-Live PostgreSQL validation was attempted but cluster initialization was blocked
-by the execution environment (`shmget: Operation not permitted`). The separate
-`yarn test:postgres` test was type-checked but not executed. Run it against a
-disposable PostgreSQL database with TEST_DATABASE_URL before production use.
-No real retailer service, credentials, production database or scheduled service
-was used. No scheduler has been installed by this delivery.
-
-Compatibility fixes included: API TypeScript resolution matches the tsx runtime;
-health-check response gets an explicit type; login and registration have Suspense
-boundaries for search parameters. Next generated its current TypeScript settings
-and next-env declarations during the successful build.
+See PHASE4-STORES.md for exact setup and test commands.

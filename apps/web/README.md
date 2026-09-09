@@ -1,3 +1,5 @@
+For the current monorepo, install dependencies at the repository root with `yarn install --frozen-lockfile`, then run `yarn dev:web`. See the root PHASE4-STORES.md guide. Historical milestones follow.
+
 # FlipScout — Phase 1
 
 Next.js dashboard MVP for clearance retail-arbitrage opportunities.
@@ -17,8 +19,8 @@ Next.js dashboard MVP for clearance retail-arbitrage opportunities.
 ## Run
 
 ```bash
-npm install
-npm run dev
+yarn install --frozen-lockfile
+yarn dev
 ```
 
 Then open http://localhost:3000.
@@ -54,8 +56,8 @@ After upgrading from the previous archive, delete cached dependencies before rei
 
 ```bash
 rm -rf node_modules .next package-lock.json
-npm install
-npm run dev
+yarn install --frozen-lockfile
+yarn dev
 ```
 
 If the dev server was already running, stop it before reinstalling.
@@ -75,9 +77,9 @@ After extracting this version, do a clean dependency install:
 
 ```bash
 rm -rf node_modules .next package-lock.json
-npm install
-npm run verify:tailwind
-npm run dev
+yarn install --frozen-lockfile
+yarn verify:tailwind
+yarn dev
 ```
 
 You should see a small `Tailwind 4` badge next to the date. That badge uses only Tailwind utilities and confirms Tailwind compilation is working. The rest of the dashboard still uses the existing CSS classes, ready for incremental migration.
@@ -199,7 +201,7 @@ OpenStreetMap have been removed from the project.
 Install dependencies after extracting this version:
 
 ```bash
-npm install
+yarn install --frozen-lockfile
 ```
 
 Create `.env.local` from `.env.example` and configure:

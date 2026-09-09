@@ -1,3 +1,4 @@
+import { parseStoreQuery, parseOrigin } from "./stores/query.js";
 import "dotenv/config";
 import { createServer } from "node:http";
 import { URL } from "node:url";
@@ -21,6 +22,7 @@ const {
   watchlistProvider,
   authProvider,
   ingestionStatusProvider,
+  storeProvider,
 } = createProviders();
 const emailProvider = createEmailProvider();
 const rateLimiter = new InMemoryRateLimiter();
@@ -593,25 +595,19 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/v1/stores") {
+      const query = parseStoreQuery(url.searchParams);
+      const result = await storeProvider.search(query);
+      writeJson(response, 200, result);
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/v1/deals") {
       const q = url.searchParams.get("q")?.trim() || undefined;
       const retailer = url.searchParams.get("retailer") || undefined;
       const category = url.searchParams.get("category") || undefined;
       const source = url.searchParams.get("source") || undefined;
-      const originLatitudeRaw = url.searchParams.get("lat");
-      const originLongitudeRaw = url.searchParams.get("lng");
-      const originLatitude =
-        originLatitudeRaw !== null ? Number(originLatitudeRaw) : undefined;
-      const originLongitude =
-        originLongitudeRaw !== null ? Number(originLongitudeRaw) : undefined;
-
-      if (
-        (originLatitude !== undefined && !Number.isFinite(originLatitude)) ||
-        (originLongitude !== undefined && !Number.isFinite(originLongitude))
-      ) {
-        writeJson(response, 400, { error: "Invalid lat/lng query parameters." });
-        return;
-      }
+      const { latitude: originLatitude, longitude: originLongitude } = parseOrigin(url.searchParams);
 
       const deals = await dealProvider.listDeals({
         q,

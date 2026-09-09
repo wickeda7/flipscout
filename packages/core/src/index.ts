@@ -21,3 +21,5 @@ export function estimateResalePrice(input: {
   const minimumMarkup = input.clearancePrice * 1.35;
   return Math.max(input.clearancePrice, retailFloor, minimumMarkup);
 }
+
+export { distanceMiles } from "./geo";

@@ -10,10 +10,12 @@
     "db:bootstrap": "tsx scripts/bootstrap-db.ts",
     "db:check": "tsx scripts/check-db.ts",
     "ingest:retailer": "tsx scripts/ingest-retailer.ts",
-    "test:connectors": "tsx --test tests/*.test.ts",
+    "test:connectors": "tsx --test tests/connectors.test.ts",
     "ingest:check": "tsx scripts/check-sources.ts",
     "ingest:due": "tsx scripts/ingest-retailer.ts --due",
-    "test:postgres": "tsx --test tests/postgres.integration.ts"
+    "test:postgres": "tsx --test tests/postgres.integration.ts",
+    "test:stores": "tsx --test tests/stores.test.ts",
+    "test:stores:api": "tsx tests/stores-api.smoke.ts"
   },
   "dependencies": {
     "@flipscout/types": "0.1.0",
