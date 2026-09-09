@@ -19,25 +19,25 @@ export class MockDealProvider implements DealProvider {
       if (query.source && query.source !== (deal.source ?? "mock")) return false;
       if (
         q &&
-        ![
-          deal.productName,
-          deal.brand,
-          deal.retailer,
-          deal.storeName,
-          deal.category,
-          deal.city,
-          deal.state,
-        ].some((value) => includes(value, q))
+        !(query.storeId ? [deal.productName, deal.brand] : [
+          deal.productName, deal.brand, deal.retailer, deal.storeName, deal.category, deal.city, deal.state,
+        ]).some((value) => includes(value, q))
       ) {
         return false;
       }
 
       if (retailer && deal.retailer !== retailer) return false;
-      if (category && deal.category !== category) return false;
+      if (category && (query.storeId ? deal.category.toLowerCase() !== category.toLowerCase() : deal.category !== category)) return false;
 
       return true;
     });
-    if (query.storeId) result.sort((a, b) => b.buyScore - a.buyScore || b.estimatedProfit - a.estimatedProfit || a.id.localeCompare(b.id));
+    if (query.storeId) result.sort((a, b) => {
+      const primary = query.inventorySort === "price-asc" ? a.clearancePrice - b.clearancePrice
+        : query.inventorySort === "price-desc" ? b.clearancePrice - a.clearancePrice
+        : query.inventorySort === "profit" ? b.estimatedProfit - a.estimatedProfit
+        : b.buyScore - a.buyScore || b.estimatedProfit - a.estimatedProfit;
+      return primary || a.id.localeCompare(b.id);
+    });
     const page = query.limit === undefined ? result : result.slice(query.offset ?? 0, (query.offset ?? 0) + query.limit);
     return page.map(deal => query.originLatitude === undefined ? { ...deal } : { ...deal, distanceMiles: Number(distanceMiles({ latitude: query.originLatitude, longitude: query.originLongitude! }, deal).toFixed(1)) });
   }

@@ -1,3 +1,7 @@
+# Phase 4.3: inventory filters and sorting
+
+See [PHASE4-3-FILTERS.md](PHASE4-3-FILTERS.md) for current features and Yarn setup/test commands.
+
 # Phase 4.2: store inventory
 
 See [PHASE4-2-INVENTORY.md](PHASE4-2-INVENTORY.md) for the latest feature, shared API and exact Yarn commands.

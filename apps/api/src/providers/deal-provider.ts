@@ -1,6 +1,7 @@
-import type { Deal } from "@flipscout/types";
+import type { Deal, InventorySort } from "@flipscout/types";
 
 export interface DealQuery {
+  inventorySort?: InventorySort;
   storeId?: string;
   limit?: number;
   offset?: number;

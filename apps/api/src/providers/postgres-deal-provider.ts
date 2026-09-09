@@ -86,9 +86,10 @@ export class PostgresDealProvider implements DealProvider {
     const where: string[] = ["d.is_active = TRUE"];
 
     if (query.q) {
-      values.push(`%${query.q}%`);
+      const search = query.storeId ? query.q.replace(/[\\%_]/g, "\\$&") : query.q;
+      values.push(`%${search}%`);
       const i = values.length;
-      where.push(`(
+      where.push(query.storeId ? `(d.product_name ILIKE $${i} OR d.brand ILIKE $${i})` : `(
         d.product_name ILIKE $${i}
         OR d.brand ILIKE $${i}
         OR s.retailer ILIKE $${i}
@@ -106,7 +107,7 @@ export class PostgresDealProvider implements DealProvider {
 
     if (query.category) {
       values.push(query.category);
-      where.push(`d.category = $${values.length}`);
+      where.push(query.storeId ? `LOWER(d.category) = LOWER($${values.length})` : `d.category = $${values.length}`);
     }
 
     if (query.source) {
@@ -120,6 +121,13 @@ export class PostgresDealProvider implements DealProvider {
       values.push(positiveIntegerEnv("INGESTION_STALE_AFTER_MINUTES", 180));
       where.push(`COALESCE(d.source_updated_at, d.updated_at) >= NOW() - ($${values.length} * INTERVAL '1 minute')`);
     }
+    const inventoryOrders = {
+      "buy-score": "d.buy_score DESC, d.estimated_profit DESC, d.id",
+      "profit": "d.estimated_profit DESC, d.id",
+      "price-asc": "d.clearance_price ASC, d.id",
+      "price-desc": "d.clearance_price DESC, d.id",
+    };
+    const order = query.storeId ? inventoryOrders[query.inventorySort ?? "buy-score"] : inventoryOrders["buy-score"];
     let pagination = "";
     if (query.limit !== undefined) {
       values.push(query.limit, query.offset ?? 0);
@@ -176,7 +184,7 @@ export class PostgresDealProvider implements DealProvider {
       FROM deals d
       JOIN stores s ON s.id = d.store_id
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-      ORDER BY d.buy_score DESC, d.estimated_profit DESC, d.id
+      ORDER BY ${order}
       ${pagination}
       `,
       values,

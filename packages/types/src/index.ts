@@ -275,7 +275,11 @@ export interface StoreSearchResponse {
   dataProvider: "mock" | "postgres";
 }
 
+export type InventorySort = "buy-score" | "profit" | "price-asc" | "price-desc";
 export interface StoreInventoryQuery {
+  q?: string;
+  category?: string;
+  sort?: InventorySort;
   latitude?: number;
   longitude?: number;
   limit?: number;

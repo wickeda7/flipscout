@@ -122,10 +122,46 @@ test("store inventory handles unknown stores, invalid queries and location", asy
   await assert.rejects(storeInventory("unknown", new URLSearchParams(), stores, deals), { status: 404 });
   await assert.rejects(storeInventory("", new URLSearchParams(), stores, deals), { status: 400 });
   const s = (await stores.search(query())).stores[0];
-  for (const params of ["limit=0", "offset=-1", "lat=0", "q=ignored", "sort=distance"])
+  for (const params of ["limit=0", "offset=-1", "lat=0", "retailer=ignored", "sort=distance"])
     await assert.rejects(storeInventory(s.id, new URLSearchParams(params), stores, deals), { status: 400 });
   const result = await storeInventory(s.id, new URLSearchParams(`lat=${s.latitude}&lng=${s.longitude}`), stores, deals);
   assert.equal(result.store.distanceMiles, 0); assert.ok(result.deals.every(d => d.distanceMiles === 0));
   const empty = await storeInventory(s.id, new URLSearchParams("offset=10000"), stores, deals);
   assert.deepEqual(empty.deals, []); assert.equal(empty.hasMore, false);
+});
+
+test("inventory product search is literal, case-insensitive and category-scoped", async () => {
+  const { MockDealProvider } = await import("../src/providers/mock-deal-provider.js");
+  const { storeInventory } = await import("../src/stores/inventory.js");
+  const rows = [
+    { ...mockDeals[0], id: "a", productName: "50%_ Kit", brand: "Maker", category: "Tools" },
+    { ...mockDeals[0], id: "b", productName: "Other kit", brand: "Maker", category: "Garden" },
+  ];
+  const stores = new MockStoreProvider(rows), deals = new MockDealProvider(rows);
+  const id = (await stores.search(query())).stores[0].id;
+  const get = (params: string) => storeInventory(id, new URLSearchParams(params), stores, deals);
+  assert.deepEqual((await get("q=50%25_")).deals.map(d => d.id), ["a"]);
+  assert.deepEqual((await get("q=maker&category=tOoLs")).deals.map(d => d.id), ["a"]);
+  assert.equal((await get("q=nonexistent")).deals.length, 0);
+  for (const params of ["sort=unknown", "sort=profit&sort=buy-score", "category=" + "x".repeat(81), "q=" + "x".repeat(121)])
+    await assert.rejects(get(params), { status: 400 });
+});
+
+test("inventory sorting is applied before pagination with stable tie breakers", async () => {
+  const { MockDealProvider } = await import("../src/providers/mock-deal-provider.js");
+  const { storeInventory } = await import("../src/stores/inventory.js");
+  const rows = [
+    { ...mockDeals[0], id: "a", clearancePrice: 30, estimatedProfit: 10, buyScore: 99 },
+    { ...mockDeals[0], id: "b", clearancePrice: 10, estimatedProfit: 30, buyScore: 70 },
+    { ...mockDeals[0], id: "c", clearancePrice: 20, estimatedProfit: 20, buyScore: 80 },
+    { ...mockDeals[0], id: "d", clearancePrice: 20, estimatedProfit: 20, buyScore: 80 },
+  ];
+  const stores = new MockStoreProvider(rows), deals = new MockDealProvider(rows);
+  const id = (await stores.search(query())).stores[0].id;
+  for (const [sort, expected] of [["buy-score", "acdb"], ["profit", "bcda"], ["price-asc", "bcda"], ["price-desc", "acdb"]]) {
+    const first = await storeInventory(id, new URLSearchParams(`sort=${sort}&limit=2`), stores, deals);
+    const second = await storeInventory(id, new URLSearchParams(`sort=${sort}&limit=2&offset=2`), stores, deals);
+    assert.equal([...first.deals, ...second.deals].map(d => d.id).join(""), expected);
+    assert.equal(first.hasMore, true); assert.equal(second.hasMore, false);
+  }
 });

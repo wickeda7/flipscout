@@ -4,14 +4,21 @@ export type SupportedLocale = (typeof supportedLocales)[number];
 export const defaultLocale: SupportedLocale = "en";
 
 const en = {
+  "inventory.searchLabel": "Search product or brand",
+  "inventory.categoryLabel": "Category (exact name, optional)",
+  "inventory.priceAsc": "Lowest clearance price",
+  "inventory.priceDesc": "Highest clearance price",
+  "inventory.apply": "Apply filters",
+  "inventory.reset": "Reset filters",
+
   "inventory.open": "View store deals",
   "inventory.title": "Store deals",
   "inventory.close": "Close deals",
-  "inventory.description": "Recent in-stock deals, ranked by BUY score. Confirm availability before traveling.",
+  "inventory.description": "Search recent in-stock deals and choose how to rank them. Confirm availability before traveling.",
   "inventory.loading": "Loading store deals…",
   "inventory.failed": "Could not load store deals. Try again.",
   "inventory.missing": "This store is no longer available in the catalog.",
-  "inventory.empty": "No recent in-stock deals on this page.",
+  "inventory.empty": "No recent in-stock deals match this page and its filters.",
   "inventory.retry": "Retry",
   "inventory.pages": "Store deals pages",
 
@@ -413,14 +420,21 @@ const en = {
 } as const;
 
 const vi: Record<keyof typeof en, string> = {
+  "inventory.searchLabel": "Tìm sản phẩm hoặc thương hiệu",
+  "inventory.categoryLabel": "Danh mục (tên chính xác, không bắt buộc)",
+  "inventory.priceAsc": "Giá thanh lý thấp nhất",
+  "inventory.priceDesc": "Giá thanh lý cao nhất",
+  "inventory.apply": "Áp dụng bộ lọc",
+  "inventory.reset": "Đặt lại bộ lọc",
+
   "inventory.open": "Xem ưu đãi tại cửa hàng",
   "inventory.title": "Ưu đãi tại cửa hàng",
   "inventory.close": "Đóng danh sách ưu đãi",
-  "inventory.description": "Ưu đãi gần đây còn hàng, xếp theo điểm BUY. Hãy xác nhận còn hàng trước khi đi.",
+  "inventory.description": "Tìm ưu đãi gần đây còn hàng và chọn cách xếp hạng. Hãy xác nhận còn hàng trước khi đi.",
   "inventory.loading": "Đang tải ưu đãi tại cửa hàng…",
   "inventory.failed": "Không thể tải ưu đãi tại cửa hàng. Hãy thử lại.",
   "inventory.missing": "Cửa hàng này không còn trong danh mục.",
-  "inventory.empty": "Không có ưu đãi gần đây còn hàng trên trang này.",
+  "inventory.empty": "Không có ưu đãi gần đây còn hàng phù hợp với trang và bộ lọc này.",
   "inventory.retry": "Thử lại",
   "inventory.pages": "Các trang ưu đãi tại cửa hàng",
 
