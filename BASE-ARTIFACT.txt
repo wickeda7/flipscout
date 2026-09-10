@@ -1,2 +1,2 @@
-Continues retained working copy delivered as flipscout-phase5-home-depot-pilot.zip.
-Current checkpoint: Phase 5 category deal discovery.
+Continues flipscout-phase5-saved-search-settings.zip.
+Current checkpoint: automatic discovery without a category selector.

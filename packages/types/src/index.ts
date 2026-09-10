@@ -308,8 +308,8 @@ export interface RetailerAvailabilityResponse {
 }
 
 export type DiscoveryKind = "all" | "sale" | "clearance" | "penny";
-export type DiscoveryCategory = "tools" | "appliances" | "lighting" | "garden" | "storage";
-export interface DiscoveryQuery { category: DiscoveryCategory; kind: DiscoveryKind; page: number }
+export type DiscoveryCategory = "all" | "tools" | "appliances" | "lighting" | "garden" | "storage";
+export interface DiscoveryQuery { category: DiscoveryCategory; kind: DiscoveryKind; page: number; zip?: string; radiusMiles?: number }
 export interface DiscoveredDeal {
   id: string; title: string; price: number; originalPrice: number | null; savings: number | null;
   kind: Exclude<DiscoveryKind,"all">; promotion: string | null; productUrl: string; imageUrl: string | null;
@@ -318,5 +318,7 @@ export interface DiscoveredDeal {
 export interface DiscoveryResponse {
   source: "serpapi-home-depot"; retailer: "Home Depot"; storeId: "6305"; storeName: string; zip: "33511";
   query: DiscoveryQuery; fetchedAt: string; providerCreatedAt: string | null;
+  coverage?: { completed: number; failed: number; total: number };
+  location?: { zip: string; radiusMiles: number; distanceMiles: number; covered: boolean };
   deals: DiscoveredDeal[]; productsChecked: number; skippedProducts: number; hasMore: boolean;
 }

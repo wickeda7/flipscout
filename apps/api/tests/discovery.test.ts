@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { HomeDepotDiscovery, normalizeDiscovery, parseDiscoveryQuery } from "../src/retailers/home-depot-discovery.js";
 import { requestSerpApi } from "../src/retailers/serpapi-request.js";
+const near = async()=>({latitude:27.94,longitude:-82.26});
 const query = { category: "tools", kind: "all", page: 1 } as const;
 const fixture = (): any => ({
   search_metadata: { status: "Success", created_at: "2026-09-09 12:00:00 UTC" },
@@ -56,18 +57,18 @@ test("deduplicates products and drops untrusted image locations", () => {
 test("filters and pages are bounded and cannot override provider credentials", () => {
   for(const input of ["api_key=x","page=11","page=-1","category=__proto__","kind=x","page=1&page=2"])
     assert.throws(()=>parseDiscoveryQuery(new URLSearchParams(input)),/Invalid deal filters/);
-  assert.deepEqual(parseDiscoveryQuery(new URLSearchParams()),query);
+  assert.deepEqual(parseDiscoveryQuery(new URLSearchParams()),{...query,category:"all",zip:"33511",radiusMiles:25});
 });
 test("coalesces concurrent identical searches, caches and clones results", async () => {
   let calls=0;
-  const discovery=new HomeDepotDiscovery(async()=>{calls++;await new Promise(r=>setTimeout(r,5));return fixture();});
+  const discovery=new HomeDepotDiscovery(async()=>{calls++;await new Promise(r=>setTimeout(r,5));return fixture();},Date.now,near);
   const [a,b]=await Promise.all([discovery.search(query),discovery.search(query)]);
   a.deals.length=0;assert.equal(b.deals.length,1);
   assert.equal((await discovery.search(query)).deals.length,1);assert.equal(calls,1);
 });
 test("failed searches can be retried and expired cache is refreshed", async () => {
   let calls=0,now=0;
-  const discovery=new HomeDepotDiscovery(async()=>{calls++;if(calls===1)throw Error("fixture failure");return fixture();},()=>now);
+  const discovery=new HomeDepotDiscovery(async()=>{calls++;if(calls===1)throw Error("fixture failure");return fixture();},()=>now,near);
   await assert.rejects(discovery.search(query));await discovery.search(query);
   now=600001;await discovery.search(query);assert.equal(calls,3);
 });
@@ -75,7 +76,7 @@ test("penny searches are bounded by price and pagination stays provider-independ
   const discovery=new HomeDepotDiscovery(async params=>{
     assert.equal(params.upperbound,"0.01");assert.equal(params.nao,"216");
     const f=fixture();f.search_parameters.nao=216;return f;
-  });
+  },Date.now,near);
   assert.equal((await discovery.search({...query,kind:"penny",page:10})).hasMore,false);
 });
 test("request uses fixed host and redirects are refused", async () => {
@@ -101,4 +102,48 @@ test("rejects invalid JSON, non-JSON and oversized responses", async () => {
     [Response.json({data:"x".repeat(4000001)}),/PROVIDER_RESPONSE_TOO_LARGE/],
     [new Response("private",{status:503}),/SERPAPI_HTTP_503/]
   ] as const) await assert.rejects(requestSerpApi({},"secret",(async()=>response) as typeof fetch),code);
+});
+
+test("ZIP and radius validation preserve leading zeros and reject values above 25", () => {
+  assert.equal(parseDiscoveryQuery(new URLSearchParams("zip=00501&radiusMiles=5")).zip,"00501");
+  for(const q of ["zip=1234","zip=abcde","radiusMiles=26","radiusMiles=0","radiusMiles=2.5","zip=33511&zip=10001"])
+    assert.throws(()=>parseDiscoveryQuery(new URLSearchParams(q)),/Invalid deal filters/);
+});
+test("out-of-radius location avoids paid search and distinguishes missing coverage", async () => {
+  let calls=0;
+  const service=new HomeDepotDiscovery(async()=>{calls++;return fixture();},Date.now,async()=>({latitude:40.75,longitude:-73.99}));
+  const result=await service.search({...query,zip:"10001",radiusMiles:25});
+  assert.equal(calls,0);assert.equal(result.location?.covered,false);assert.equal(result.productsChecked,0);
+});
+test("in-radius location preserves selected ZIP without changing retailer store context", async () => {
+  const service=new HomeDepotDiscovery(async params=>{
+    assert.equal(params.store_id,"6305");assert.equal(params.delivery_zip,"33511");return fixture();
+  },Date.now,near);
+  const result=await service.search({...query,zip:"33594",radiusMiles:5});
+  assert.equal(result.location?.zip,"33594");assert.equal(result.location?.covered,true);
+});
+
+test("automatic discovery merges five groups, deduplicates and limits concurrency", async()=>{
+  let active=0,peak=0,calls=0;
+  const service=new HomeDepotDiscovery(async params=>{
+    calls++;active++;peak=Math.max(peak,active);
+    await new Promise(resolve=>setTimeout(resolve,2));
+    active--;
+    const f=fixture();f.search_parameters.q=params.q;return f;
+  },Date.now,near);
+  const r=await service.search({...query,category:"all"});
+  assert.equal(calls,5);assert.equal(peak,2);assert.equal(r.deals.length,1);
+  assert.deepEqual(r.coverage,{completed:5,failed:0,total:5});
+  assert.equal(r.query.category,"all");
+  await service.search({...query,category:"all"});assert.equal(calls,5);
+});
+test("automatic discovery reports partial coverage and total failure distinctly", async()=>{
+  const service=new HomeDepotDiscovery(async params=>{
+    if(params.q==="tools")throw Error("fixture failure");
+    const f=fixture();f.search_parameters.q=params.q;return f;
+  },Date.now,near);
+  const r=await service.search({...query,category:"all"});
+  assert.deepEqual(r.coverage,{completed:4,failed:1,total:5});
+  const failed=new HomeDepotDiscovery(async()=>{throw Error("fixture failure");},Date.now,near);
+  await assert.rejects(failed.search({...query,category:"all"}),/fixture failure/);
 });

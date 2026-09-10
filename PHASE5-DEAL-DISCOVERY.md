@@ -98,3 +98,86 @@ No mock or historical product was inserted into the live list as a workaround.
 Next acceptance step: obtain one successful category response, confirm its
 normalization and store context, then add persistent observations and broader
 discovery. Phase 5 remains in progress.
+
+## ZIP / radius and filter-button update
+
+Find deals now accepts a five-digit US ZIP and radius choices of 5, 10, 15, 20,
+or 25 miles. The API accepts whole miles 1–25 and rejects other values.
+Defaults remain ZIP 33511 and 25 miles. All Deals, Sales, Clearance and Penny
+candidates select the deal type; Highest % and Lowest $ sort only the current
+page, without another paid request. Selecting a deal type after searching starts
+a new first-page request with the last submitted location.
+
+The API resolves the ZIP center through https://api.zippopotam.us/us/{zip},
+with an eight-second timeout, and measures approximate straight-line distance
+to the single connected pilot store. It does not discover additional stores.
+An out-of-range ZIP returns explicit no-connected-store coverage and makes no
+SerpApi request. Missing ZIPs and lookup failures remain distinct errors.
+
+Store identity/address reference:
+https://www.homedepot.com/l/East-Brandon/FL/Brandon/33511/6305
+Approximate store coordinate reference:
+https://www.merchantcircle.com/fl-brandon/home-and-garden/home-repair-and-improvement/lumber
+Distances are approximate ZIP-center distances, not driving distances or
+distances from the shopper's address. The retailer request retains store 6305
+and delivery ZIP 33511; the shopper's ZIP is used for distance filtering only.
+
+Validation for this update: 18 discovery/location tests, API typecheck and
+production build passed. The live ZIP service returned Brandon, FL coordinates
+for 33511. No additional paid retailer searches were made. Run:
+yarn test:discovery
+yarn typecheck:api
+yarn build:web --webpack
+
+No new keys, dependencies or database migrations are required.
+
+## Remembered settings and shareable links
+
+The Find deals page remembers valid ZIP, radius, category, deal type and sort
+settings in browser local storage when available. Copy search link generates a
+link containing only those settings. If clipboard access is unavailable, a
+selectable link field appears. Reset filters restores ZIP 33511 / 25 miles /
+Tools / All deals / default ordering and clears the displayed search.
+
+Explicit search-link settings override device preferences. Invalid values are
+replaced with defaults. Leading zeros in ZIP codes are preserved. Page numbers,
+credentials and automatic-execution flags are never saved or shared.
+Opening a link or refreshing the page only restores controls; Find deals must
+be selected to run a provider search. Device preferences are not account-synced.
+
+Five new settings tests passed, covering precedence, malformed storage, invalid
+and duplicate URL parameters, leading-zero ZIP codes and exclusion of secrets.
+Production build passed. No paid searches were made for this UI update.
+
+Setup remains yarn install --frozen-lockfile, then yarn dev:api and yarn dev:web
+in separate terminals. Test with yarn test:discovery and yarn build:web --webpack.
+No environment changes or database migrations are needed.
+
+## Automatic discovery: category selector removed
+
+Find deals now requires only ZIP, radius and an optional deal-type filter.
+The backend automatically combines tools, appliances, lighting, lawn/garden
+and storage searches. This is bounded coverage, not a whole-store inventory scan.
+Old saved category preferences and shared category links no longer restrict the
+web search. New shared links omit category entirely.
+
+The API defaults category to all; explicit category values remain supported
+for compatibility with older API clients. An all search requests one page from
+each of five groups, with a maximum of two simultaneous provider requests
+across the API process. One uncached search can use five provider requests and
+may take several minutes. Requests are not automatically retried.
+
+Results are deduplicated by product ID. Partial failures return successful
+results with completed/failed/total coverage counts. Total failure remains an
+error, never empty inventory. The provider timestamp is the oldest timestamp
+among the successful groups, or unknown if any successful group lacks one.
+Products checked counts rows before deduplication. Next page advances each
+group's provider offset together, not a globally ranked inventory page.
+Highest % and Lowest $ still sort only the returned combined page.
+Successful and partial combined results use the existing ten-minute cache.
+
+Validation: all 26 discovery, location and settings tests passed; API typecheck
+and production web build passed. No paid provider requests were made.
+Existing live provider 503 limitations and single-store coverage still apply.
+Run yarn test:discovery, yarn typecheck:api and yarn build:web --webpack.
+No migration or environment changes are required.

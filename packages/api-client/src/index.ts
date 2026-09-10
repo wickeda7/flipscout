@@ -224,7 +224,7 @@ export class FlipScoutApiClient {
   }
 
   async discoverHomeDepot(query: DiscoveryQuery, signal?: AbortSignal): Promise<DiscoveryResponse> {
-    return this.request<DiscoveryResponse>(`/v1/discovery/home-depot?${new URLSearchParams({category:query.category,kind:query.kind,page:String(query.page)})}`,{signal});
+    return this.request<DiscoveryResponse>(`/v1/discovery/home-depot?${new URLSearchParams({category:query.category,kind:query.kind,page:String(query.page),zip:query.zip??"33511",radiusMiles:String(query.radiusMiles??25)})}`,{signal});
   }
 
   async optimizeRoute(
