@@ -153,3 +153,9 @@ ALTER TABLE stores ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT T
 
 -- Upgrade older store catalogs used by the demo inventory refresher.
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ;
+
+-- Complete metadata upgrades for catalogs created before ingestion support.
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS source_url TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS sku TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS upc TEXT;
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS source_updated_at TIMESTAMPTZ;

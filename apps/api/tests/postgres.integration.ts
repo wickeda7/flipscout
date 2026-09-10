@@ -90,3 +90,21 @@ test("legacy store schema upgrades before demo seeding", async () => {
     await admin.end();
   }
 });
+
+test("schema readiness detects and repairs legacy metadata in a custom search path", async () => {
+  assert.ok(process.env.TEST_DATABASE_URL, "Set TEST_DATABASE_URL to a disposable PostgreSQL database");
+  const { verifySchemaReadiness } = await import("./schema-readiness.fixture.js");
+  const schema = "readiness_" + randomUUID().replaceAll("-", "");
+  const admin = new Pool({ connectionString: process.env.TEST_DATABASE_URL });
+  let pool: Pool | undefined;
+  try {
+    await admin.query(`CREATE SCHEMA ${schema}`);
+    pool = new Pool({ connectionString: process.env.TEST_DATABASE_URL, max: 1, options: `-c search_path=${schema}` });
+    const sql = readFileSync(new URL("../../../database/schema.sql", import.meta.url), "utf8");
+    await verifySchemaReadiness(pool, () => pool!.query(sql));
+  } finally {
+    await pool?.end();
+    await admin.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
+    await admin.end();
+  }
+});

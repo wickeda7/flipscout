@@ -1,1 +1,1 @@
-Base: retained Phase 4.4 working copy from flipscout-phase4-4-mock-inventory.zip
+Continues retained working copy of flipscout-phase4-5-database-readiness.zip.

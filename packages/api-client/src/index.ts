@@ -1,4 +1,5 @@
 import type {
+  RetailerAvailabilityResponse,
   StoreInventoryQuery,
   StoreInventoryResponse,
   StoreSearchQuery,
@@ -215,6 +216,10 @@ export class FlipScoutApiClient {
     await this.request<{ ok: true }>("/v1/watchlist", {
       method: "DELETE",
     });
+  }
+
+  async getBestBuyAvailability(zip: string, sku: string, signal?: AbortSignal): Promise<RetailerAvailabilityResponse> {
+    return this.request<RetailerAvailabilityResponse>(`/v1/retailers/bestbuy/availability?${new URLSearchParams({zip, sku})}`, { signal });
   }
 
   async optimizeRoute(

@@ -292,3 +292,17 @@ export interface StoreInventoryResponse {
   offset: number;
   hasMore: boolean;
 }
+
+
+/** On-demand retailer observation; not a clearance claim or an exact stock count. */
+export interface RetailerAvailabilityResponse {
+  source: "bestbuy";
+  observedAt: string;
+  sku: string;
+  productName: string;
+  regularPrice: number | null;
+  salePrice: number | null;
+  priceScope: "catalog";
+  stores: { id: string; name: string; city: string; state: string; distanceMiles: number | null;
+    availability: "in-stock"; inventory: null; lowStock: boolean | null }[];
+}

@@ -1,3 +1,4 @@
+import { assertSchemaReady } from "../src/database/schema-readiness.js";
 import "dotenv/config";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -36,6 +37,7 @@ async function run() {
 
     console.log("Applying database/schema.sql...");
     await client.query(schema);
+    await assertSchemaReady(client);
 
     console.log("Applying database/seed.sql...");
     await client.query(seed);

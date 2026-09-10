@@ -1,3 +1,4 @@
+import { inspectSchema, schemaErrorCode } from "../database/schema-readiness.js";
 import { positiveIntegerEnv } from "../security/config.js";
 import { Pool } from "pg";
 import type { Deal } from "@flipscout/types";
@@ -240,7 +241,7 @@ export class PostgresDealProvider implements DealProvider {
   }
 
   async health() {
-    await this.pool.query("SELECT 1");
-    return { ok: true, detail: "postgres" };
+    const status = await inspectSchema(this.pool);
+    return { ok: status.ok, detail: status.ok ? "postgres" : schemaErrorCode };
   }
 }

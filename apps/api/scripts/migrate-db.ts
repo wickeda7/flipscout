@@ -1,3 +1,4 @@
+import { assertSchemaReady } from "../src/database/schema-readiness.js";
 import "dotenv/config";
 import { readFile } from "node:fs/promises";
 import { Pool } from "pg";
@@ -12,6 +13,7 @@ try {
   try {
     await client.query("BEGIN");
     await client.query(schema);
+    await assertSchemaReady(client);
     await client.query("COMMIT");
     console.log("Schema migration complete. No seed data was applied.");
   } catch (error) {

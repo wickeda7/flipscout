@@ -1,3 +1,5 @@
+import { BestBuyClient, parseBestBuyQuery } from "./retailers/bestbuy.js";
+import { isMissingSchemaError, migrationAction, schemaErrorCode } from "./database/schema-readiness.js";
 import { storeInventory } from "./stores/inventory.js";
 import { parseStoreQuery, parseOrigin } from "./stores/query.js";
 import "dotenv/config";
@@ -191,6 +193,14 @@ const server = createServer(async (request, response) => {
 
     const url = new URL(request.url, `http://${request.headers.host}`);
 
+    if (request.method === "GET" && url.pathname === "/v1/retailers/bestbuy/availability") {
+      if (!enforceRateLimit(request, response, "retailer:bestbuy", 10, 60 * 1000)) return;
+      const { zip, sku } = parseBestBuyQuery(url.searchParams);
+      response.setHeader("Cache-Control", "no-store");
+      writeJson(response, 200, await new BestBuyClient().availability(zip, sku));
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/health") {
       let dataProviderHealth: { ok: boolean; detail?: string } = { ok: true, detail: dataProviderName };
       try {
@@ -199,7 +209,7 @@ const server = createServer(async (request, response) => {
       } catch (error) {
         dataProviderHealth = {
           ok: false,
-          detail: error instanceof Error ? error.message : "provider error",
+          detail: "DATA_PROVIDER_UNAVAILABLE",
         };
       }
 
@@ -741,6 +751,11 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (dataProviderName === "postgres" && isMissingSchemaError(error)) {
+      console.error("Database schema query failed:", error);
+      writeJson(response, 503, { error: `Database setup is incomplete. ${migrationAction}`, code: schemaErrorCode });
+      return;
+    }
     console.error(error);
     writeJson(response, 500, {
       error: "Unexpected server error.",

@@ -1,3 +1,7 @@
+# Current checkpoint: Phase 4 closeout / Phase 5 started
+
+See [Phase 5 setup and validation](PHASE5-RETAILER-CONNECTION.md) and the [roadmap](ROADMAP.md). Live retailer access still requires provider credentials; Home Depot penny-price coverage is not connected.
+
 # Demo seed migration fix
 
 See [DEMO-SEED-FIX.md](DEMO-SEED-FIX.md) for the stores.last_seen_at upgrade and commands.
