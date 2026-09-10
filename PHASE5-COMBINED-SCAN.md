@@ -75,3 +75,48 @@ The earlier single-group success remains valid evidence. This combined check
 shows partial live discovery works, but full five-group reliability is still
 unresolved. No clearance labels or penny prices were returned in the successful
 portion; that is not evidence that the unchecked inventory has none.
+
+## Local deal-type filters
+
+Find deals now always requests kind=all, including when a saved search has Sales,
+Clearance or Pennies selected. The selected button filters the loaded combined
+page locally. Switching buttons does not change the request state, re-fetch,
+reset pagination or consume provider credits. Matching counts, empty-state
+messages and sorting use the filtered results. All Deals restores the full
+loaded page.
+
+Next/Previous still fetch an all-deal-types page and retain the selected local
+filter. This does not download every inventory page in advance. The existing
+five-group request budget applies to Find deals and pagination, not filter clicks.
+Explicit kind parameters remain supported by the API for compatibility.
+
+No API, environment or database changes are needed for this behavior.
+Validation: production web build (including TypeScript) passed.
+
+## Retry only unchecked groups
+
+Partial results now offer Retry unchecked groups. Successful group pages are
+cached independently for ten minutes and reused; only missing groups are
+requested again. Existing results remain visible while retrying, with the
+selected local filter and sort preserved. Failed groups do not replace
+successful cached observations with empty inventory.
+
+The shared API accepts retryFailed=true on the same search parameters.
+Retry requires an existing unexpired scan. Once expired (or after an API
+restart), it returns DISCOVERY_RETRY_EXPIRED without spending provider credits;
+the user must select Find deals for a fresh search. Retrying a complete cached
+scan simply returns it. The existing 60-second provider-failure pause applies.
+Nothing retries automatically.
+
+Combined cache freshness is bounded by the oldest successful group cache expiry,
+so repeated partial retries cannot keep an old successful observation alive
+indefinitely. Cache remains in memory per API process. No database migration.
+
+Validation: 33 tests, API typecheck and production build passed. A fixture scan
+with two successes and three failures made five initial calls and exactly three
+retry calls; the two successes were reused. Expired retries made no requests.
+No paid provider calls were made for this update.
+
+Setup: preserve environment files, then run yarn install --frozen-lockfile.
+Restart yarn dev:api and yarn dev:web in separate terminals.
+Checks: yarn test:discovery, yarn typecheck:api, yarn build:web --webpack.

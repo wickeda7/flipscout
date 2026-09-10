@@ -196,3 +196,32 @@ test("missing store names cannot establish local inventory",()=>{
   const deal=normalizeDiscovery(f,query).deals[0];
   assert.equal(deal.quantity,null);assert.equal(deal.pickupStatus,"unknown");
 });
+
+test("partial retry requests only failed groups and preserves successful data",async()=>{
+  const calls:string[]=[];let healthy=false,now=0;
+  const service=new HomeDepotDiscovery(async params=>{
+    calls.push(params.q);
+    if(!healthy&&params.q!=="tools"&&params.q!=="lighting")throw Error("fixture failure");
+    const f=fixture();f.search_parameters.q=params.q;return f;
+  },()=>now,near);
+  const all={...query,category:"all" as const};
+  const first=await service.search(all);
+  assert.equal(first.coverage?.completed,2);
+  healthy=true;
+  const second=await service.search({...all,retryFailed:true});
+  assert.equal(second.coverage?.completed,5);
+  assert.equal(calls.length,8);
+  assert.equal(calls.filter(q=>q==="tools").length,1);
+  assert.equal(calls.filter(q=>q==="lighting").length,1);
+  assert.equal(second.deals.length,1);
+  await service.search({...all,retryFailed:true});assert.equal(calls.length,8);
+  now=600001;
+  await assert.rejects(service.search({...all,retryFailed:true}),/DISCOVERY_RETRY_EXPIRED/);
+  assert.equal(calls.length,8);
+});
+test("retry requires an existing scan and validates the explicit flag",async()=>{
+  assert.equal(parseDiscoveryQuery(new URLSearchParams("retryFailed=true")).retryFailed,true);
+  assert.throws(()=>parseDiscoveryQuery(new URLSearchParams("retryFailed=false")),/Invalid deal filters/);
+  const service=new HomeDepotDiscovery(async()=>{throw Error("must not request");},Date.now,near);
+  await assert.rejects(service.search({...query,retryFailed:true}),/DISCOVERY_RETRY_EXPIRED/);
+});

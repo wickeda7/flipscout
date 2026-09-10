@@ -1,2 +1,2 @@
-Continues flipscout-phase5-live-discovery.zip.
-Current checkpoint: combined-scan diagnostics and partial live validation.
+Continues flipscout-phase5-local-filters.zip.
+Current checkpoint: retry unchecked groups while preserving successful results.

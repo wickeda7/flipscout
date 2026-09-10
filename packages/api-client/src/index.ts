@@ -228,7 +228,7 @@ export class FlipScoutApiClient {
   }
 
   async discoverDeals(query: DiscoveryQuery, signal?: AbortSignal): Promise<DiscoveryResponse> {
-    return this.request<DiscoveryResponse>(`/v1/discovery?${new URLSearchParams({retailer:query.retailer??"home-depot",category:query.category,kind:query.kind,page:String(query.page),zip:query.zip??"33511",radiusMiles:String(query.radiusMiles??25)})}`,{signal});
+    return this.request<DiscoveryResponse>(`/v1/discovery?${new URLSearchParams({...query.retryFailed?{retryFailed:"true"}:{},retailer:query.retailer??"home-depot",category:query.category,kind:query.kind,page:String(query.page),zip:query.zip??"33511",radiusMiles:String(query.radiusMiles??25)})}`,{signal});
   }
 
   async optimizeRoute(

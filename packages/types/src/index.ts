@@ -325,7 +325,7 @@ export const discoveryRetailers = [
 export type DiscoveryRetailer = typeof discoveryRetailers[number]["id"];
 export type DiscoveryKind = "all" | "sale" | "clearance" | "penny";
 export type DiscoveryCategory = "all" | "tools" | "appliances" | "lighting" | "garden" | "storage";
-export interface DiscoveryQuery { retailer?: DiscoveryRetailer; category: DiscoveryCategory; kind: DiscoveryKind; page: number; zip?: string; radiusMiles?: number }
+export interface DiscoveryQuery { retryFailed?: boolean; retailer?: DiscoveryRetailer; category: DiscoveryCategory; kind: DiscoveryKind; page: number; zip?: string; radiusMiles?: number }
 export interface DiscoveredDeal {
   id: string; title: string; price: number; originalPrice: number | null; savings: number | null;
   kind: Exclude<DiscoveryKind,"all">; promotion: string | null; productUrl: string; imageUrl: string | null;

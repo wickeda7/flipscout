@@ -7,14 +7,15 @@ import { requestSerpApi } from "./serpapi-request.js";
 export const categories = {tools:"tools",appliances:"appliances",lighting:"lighting",garden:"lawn and garden",storage:"storage"};
 export function parseDiscoveryQuery(params: URLSearchParams): DiscoveryQuery {
   const invalid=():never=>{throw new RequestError("Invalid deal filters.",400,"INVALID_DISCOVERY_QUERY");};
-  for(const key of params.keys())if(!["category","kind","page","zip","radiusMiles","retailer"].includes(key)||params.getAll(key).length!==1)invalid();
+  for(const key of params.keys())if(!["category","kind","page","zip","radiusMiles","retailer","retryFailed"].includes(key)||params.getAll(key).length!==1)invalid();
   const category=params.get("category")??"all",kind=params.get("kind")??"all",page=params.get("page")??"1";
   if((category!=="all"&&!Object.hasOwn(categories,category))||!["all","sale","clearance","penny"].includes(kind)||!/^([1-9]|10)$/.test(page))invalid();
   const zip=params.get("zip")??"33511",radius=params.get("radiusMiles")??"25";
   if(!/^\d{5}$/.test(zip)||! /^(?:[1-9]|1[0-9]|2[0-5])$/.test(radius))invalid();
   const retailer=params.get("retailer")??"home-depot";
   if(!discoveryRetailers.some(r=>r.id===retailer))invalid();
-  return {retailer:retailer as DiscoveryQuery["retailer"],zip,radiusMiles:Number(radius),category:category as DiscoveryQuery["category"],kind:kind as DiscoveryQuery["kind"],page:Number(page)};
+  if(params.has("retryFailed")&&params.get("retryFailed")!=="true")invalid();
+  return {...(params.has("retryFailed")?{retryFailed:true}:{}),retailer:retailer as DiscoveryQuery["retailer"],zip,radiusMiles:Number(radius),category:category as DiscoveryQuery["category"],kind:kind as DiscoveryQuery["kind"],page:Number(page)};
 }
 const obj=(v:unknown):v is Record<string,any>=>v!==null&&typeof v==="object"&&!Array.isArray(v);
 const amount=(v:unknown):number|null=>typeof v==="number"&&Number.isFinite(v)&&v>=0?v:null;
@@ -77,14 +78,19 @@ export class HomeDepotDiscovery {
       if(next)next();else this.providerActive--;
     }
   }
+  private groupCache=new Map<string,{expires:number;result:DiscoveryResponse}>();
+  private groupKey(query:DiscoveryQuery,category:string) {return JSON.stringify([category,query.kind,query.page]);}
   private cache=new Map<string,{expires:number;result:DiscoveryResponse}>();
   private running=new Map<string,Promise<DiscoveryResponse>>();
   constructor(private readonly request:typeof requestSerpApi=requestSerpApi,private readonly now=Date.now,private readonly locate:typeof locateZip=locateZip){}
   async search(query:DiscoveryQuery):Promise<DiscoveryResponse> {
     if(query.retailer&&query.retailer!=="home-depot")throw new ConnectorError("RETAILER_NOT_CONNECTED");
-    query={...query,retailer:"home-depot",zip:query.zip??"33511",radiusMiles:query.radiusMiles??25};
+    const retryFailed=query.retryFailed===true;
+    const {retryFailed:_retry,...baseQuery}=query;
+    query={...baseQuery,retailer:"home-depot",zip:query.zip??"33511",radiusMiles:query.radiusMiles??25};
     const key=JSON.stringify(query),cached=this.cache.get(key);
-    if(cached&&cached.expires>this.now())return structuredClone(cached.result);
+    if(retryFailed&&(!cached||cached.expires<=this.now()))throw new ConnectorError("DISCOVERY_RETRY_EXPIRED");
+    if(cached&&cached.expires>this.now()&&(!retryFailed||!cached.result.coverage?.failed))return structuredClone(cached.result);
     const pending=this.running.get(key);if(pending)return structuredClone(await pending);
     // Bound concurrent paid requests across this API process.
     if(this.running.size>=2)throw new ConnectorError("DISCOVERY_BUSY");
@@ -96,9 +102,14 @@ export class HomeDepotDiscovery {
         providerCreatedAt:null,deals:[],productsChecked:0,skippedProducts:0,hasMore:false};
       const scopes=query.category==="all"?Object.keys(categories) as (keyof typeof categories)[]:[query.category];
       const pages=await Promise.allSettled(scopes.map(async category=>{
+        const groupKey=this.groupKey(query,category),saved=this.groupCache.get(groupKey);
+        if(saved&&saved.expires>this.now())return structuredClone(saved.result);
         const params:Record<string,string>={engine:"home_depot",q:categories[category],store_id:"6305",delivery_zip:"33511",ps:"24",nao:String((query.page-1)*24)};
         if(query.kind==="penny"){params.upperbound="0.01";params.hd_sort="price_low_to_high";}
-        return normalizeDiscovery(await this.fetchPage(params),{...query,category},new Date(this.now()).toISOString());
+        const groupResult=normalizeDiscovery(await this.fetchPage(params),{...query,category},new Date(this.now()).toISOString());
+        if(this.groupCache.size>=250)this.groupCache.delete(this.groupCache.keys().next().value!);
+        this.groupCache.set(groupKey,{expires:this.now()+600000,result:groupResult});
+        return groupResult;
       }));
       const successful=pages.flatMap(p=>p.status==="fulfilled"?[p.value]:[]);
       if(!successful.length) {
@@ -121,7 +132,7 @@ export class HomeDepotDiscovery {
               code:page.reason instanceof ConnectorError&&/^(SERPAPI_HTTP_[0-9]{3}|SERPAPI_(TIMEOUT|NETWORK_ERROR|KEY_MISSING)|DISCOVERY_(COOLDOWN|PROVIDER_FAILED|CONTEXT_MISMATCH|INVALID_RESPONSE)|INVALID_PROVIDER_(JSON|RESPONSE)|PROVIDER_RESPONSE_TOO_LARGE)$/.test(page.reason.code)?page.reason.code:"DISCOVERY_PROVIDER_FAILED"})}};
       result.location=location;
       if(this.cache.size>=50)this.cache.delete(this.cache.keys().next().value!);
-      this.cache.set(key,{expires:this.now()+10*60*1000,result});return result;
+      this.cache.set(key,{expires:Math.min(...successful.map(p=>this.groupCache.get(this.groupKey(query,p.query.category))!.expires)),result});return result;
     })();
     this.running.set(key,task);
     try{return structuredClone(await task);}finally{this.running.delete(key);}
