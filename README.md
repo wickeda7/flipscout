@@ -1,4 +1,8 @@
-# Current checkpoint: Phase 4 closeout / Phase 5 started
+# Current checkpoint: Phase 5 deal discovery
+
+Start with [deal-list setup and validation](PHASE5-DEAL-DISCOVERY.md). The homepage now supports sales, clearance and penny-candidate discovery for East Brandon Home Depot. Live category requests currently return provider 503 errors; no full-store or penny coverage is claimed.
+
+# Previous checkpoint: Phase 4 closeout / Phase 5 started
 
 See [Phase 5 setup and validation](PHASE5-RETAILER-CONNECTION.md) and the [roadmap](ROADMAP.md). Live retailer access still requires provider credentials; Home Depot penny-price coverage is not connected.
 

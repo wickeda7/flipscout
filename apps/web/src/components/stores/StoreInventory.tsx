@@ -51,6 +51,7 @@ export function StoreInventory({ storeId, origin, onClose }: { storeId: string; 
       {loading && <p className="py-5 text-neutral-400">{t("inventory.loading")}</p>}
       {error && <div role="alert" className="py-4 text-amber-200"><p>{t(error === "missing" ? "inventory.missing" : "inventory.failed")}</p><button type="button" className={`${buttonClass} mt-3`} onClick={() => setAttempt(n => n + 1)}>{t("inventory.retry")}</button></div>}
       {data && <>
+        {data.store.source === "mock" && <p className="mb-4 rounded-xl bg-amber-500/10 p-3 text-sm text-amber-200">{t("find.demo")}</p>}
         {data.deals.length === 0 && <p className="py-5 text-neutral-400">{t("inventory.empty")}</p>}
         <div className="grid gap-4 lg:grid-cols-2">{data.deals.map(deal => <DealCard key={deal.id} deal={deal} showDistance={origin !== null} />)}</div>
         <nav className="mt-4 flex items-center justify-between" aria-label={t("inventory.pages")}>

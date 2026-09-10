@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -22,19 +21,9 @@ export function Sidebar() {
   const { locale, setLocale, t } = useI18n();
   const { user, loading: authLoading, logout } = useAuth();
   const pathname = usePathname();
-  const [hash, setHash] = useState("");
-
-  useEffect(() => {
-    const updateHash = () => setHash(window.location.hash);
-    updateHash();
-
-    window.addEventListener("hashchange", updateHash);
-    return () => window.removeEventListener("hashchange", updateHash);
-  }, [pathname]);
-
   const nav = [
-    { label: t("nav.dashboard"), icon: BarChart3, href: "/" },
-    { label: t("nav.deals"), icon: Tags, href: "/#deals" },
+    { label: t("discover.nav"), icon: Tags, href: "/" },
+    { label: t("nav.dashboard"), icon: BarChart3, href: "/analysis" },
     { label: t("nav.stores"), icon: MapPinned, href: "/stores" },
     { label: t("nav.calculator"), icon: Calculator, href: "/calculator" },
     { label: t("nav.watchlist"), icon: Heart, href: "/watchlist" },
@@ -59,14 +48,7 @@ export function Sidebar() {
 
       <nav className="space-y-1">
         {nav.map(({ label, icon: Icon, href }) => {
-          const isDealsLink = href === "/#deals";
-          const isDashboardLink = href === "/";
-
-          const isActive = isDealsLink
-            ? pathname === "/" && hash === "#deals"
-            : isDashboardLink
-              ? pathname === "/" && hash !== "#deals"
-              : pathname === href || pathname.startsWith(`${href}/`);
+          const isActive = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 
           return (
             <Link

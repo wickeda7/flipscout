@@ -306,3 +306,17 @@ export interface RetailerAvailabilityResponse {
   stores: { id: string; name: string; city: string; state: string; distanceMiles: number | null;
     availability: "in-stock"; inventory: null; lowStock: boolean | null }[];
 }
+
+export type DiscoveryKind = "all" | "sale" | "clearance" | "penny";
+export type DiscoveryCategory = "tools" | "appliances" | "lighting" | "garden" | "storage";
+export interface DiscoveryQuery { category: DiscoveryCategory; kind: DiscoveryKind; page: number }
+export interface DiscoveredDeal {
+  id: string; title: string; price: number; originalPrice: number | null; savings: number | null;
+  kind: Exclude<DiscoveryKind,"all">; promotion: string | null; productUrl: string; imageUrl: string | null;
+  pickupText: string | null; quantity: null;
+}
+export interface DiscoveryResponse {
+  source: "serpapi-home-depot"; retailer: "Home Depot"; storeId: "6305"; storeName: string; zip: "33511";
+  query: DiscoveryQuery; fetchedAt: string; providerCreatedAt: string | null;
+  deals: DiscoveredDeal[]; productsChecked: number; skippedProducts: number; hasMore: boolean;
+}

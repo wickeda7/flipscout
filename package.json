@@ -23,7 +23,10 @@
     "db:migrate": "yarn workspace @flipscout/api db:migrate",
     "db:seed:demo": "yarn workspace @flipscout/api db:seed:demo",
     "test:feed": "yarn workspace @flipscout/api test:feed",
-    "test:bestbuy": "yarn workspace @flipscout/api test:bestbuy"
+    "test:bestbuy": "yarn workspace @flipscout/api test:bestbuy",
+    "check:home-depot": "yarn workspace @flipscout/api check:home-depot",
+    "test:home-depot": "yarn workspace @flipscout/api test:home-depot",
+    "test:discovery": "yarn workspace @flipscout/api test:discovery"
   },
   "engines": {
     "node": ">=20.9.0"

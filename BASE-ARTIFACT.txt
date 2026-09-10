@@ -1,1 +1,2 @@
-Continues retained working copy of flipscout-phase4-5-database-readiness.zip.
+Continues retained working copy delivered as flipscout-phase5-home-depot-pilot.zip.
+Current checkpoint: Phase 5 category deal discovery.

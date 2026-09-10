@@ -1,0 +1,21 @@
+{
+  "status": "awaiting-provider-access",
+  "zip": "33511",
+  "retailer": "home-depot",
+  "store": {
+    "id": "6305",
+    "name": "East Brandon",
+    "address": "1524 E Brandon Blvd",
+    "city": "Brandon",
+    "state": "FL",
+    "zip": "33511",
+    "referenceUrl": "https://www.homedepot.com/l/East-Brandon/FL/Brandon/33511/6305"
+  },
+  "candidateProvider": "serpapi",
+  "productIds": [],
+  "notes": [
+    "Planning metadata only; this file is not consumed by the ingestion runner.",
+    "Product IDs and observed clearance examples must be validated before a pilot.",
+    "No live inventory, stock quantities or penny prices have been verified."
+  ]
+}

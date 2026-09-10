@@ -1,4 +1,5 @@
 import type {
+  DiscoveryQuery, DiscoveryResponse,
   RetailerAvailabilityResponse,
   StoreInventoryQuery,
   StoreInventoryResponse,
@@ -220,6 +221,10 @@ export class FlipScoutApiClient {
 
   async getBestBuyAvailability(zip: string, sku: string, signal?: AbortSignal): Promise<RetailerAvailabilityResponse> {
     return this.request<RetailerAvailabilityResponse>(`/v1/retailers/bestbuy/availability?${new URLSearchParams({zip, sku})}`, { signal });
+  }
+
+  async discoverHomeDepot(query: DiscoveryQuery, signal?: AbortSignal): Promise<DiscoveryResponse> {
+    return this.request<DiscoveryResponse>(`/v1/discovery/home-depot?${new URLSearchParams({category:query.category,kind:query.kind,page:String(query.page)})}`,{signal});
   }
 
   async optimizeRoute(
