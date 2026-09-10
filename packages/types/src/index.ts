@@ -307,9 +307,25 @@ export interface RetailerAvailabilityResponse {
     availability: "in-stock"; inventory: null; lowStock: boolean | null }[];
 }
 
+/** Planned deal-discovery retailers; only Home Depot has a discovery adapter. */
+export const discoveryRetailers = [
+  {id:"home-depot",name:"Home Depot"},
+  {id:"lowes",name:"Lowe’s"},
+  {id:"walmart",name:"Walmart"},
+  {id:"target",name:"Target"},
+  {id:"dollar-general",name:"Dollar General"},
+  {id:"walgreens",name:"Walgreens"},
+  {id:"cvs",name:"CVS"},
+  {id:"costco",name:"Costco"},
+  {id:"sams-club",name:"Sam’s Club"},
+  {id:"best-buy",name:"Best Buy"},
+  {id:"tractor-supply",name:"Tractor Supply"},
+  {id:"office-depot",name:"Office Depot"},
+] as const;
+export type DiscoveryRetailer = typeof discoveryRetailers[number]["id"];
 export type DiscoveryKind = "all" | "sale" | "clearance" | "penny";
 export type DiscoveryCategory = "all" | "tools" | "appliances" | "lighting" | "garden" | "storage";
-export interface DiscoveryQuery { category: DiscoveryCategory; kind: DiscoveryKind; page: number; zip?: string; radiusMiles?: number }
+export interface DiscoveryQuery { retailer?: DiscoveryRetailer; category: DiscoveryCategory; kind: DiscoveryKind; page: number; zip?: string; radiusMiles?: number }
 export interface DiscoveredDeal {
   id: string; title: string; price: number; originalPrice: number | null; savings: number | null;
   kind: Exclude<DiscoveryKind,"all">; promotion: string | null; productUrl: string; imageUrl: string | null;

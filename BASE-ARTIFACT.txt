@@ -1,2 +1,2 @@
-Continues flipscout-phase5-saved-search-settings.zip.
-Current checkpoint: automatic discovery without a category selector.
+Continues flipscout-phase5-automatic-discovery.zip.
+Current checkpoint: retailer selection and explicit connection availability.

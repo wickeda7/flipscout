@@ -1,6 +1,8 @@
+import { discoveryRetailers, type DiscoveryRetailer } from "@flipscout/types";
 import type { DiscoveryCategory, DiscoveryKind } from "@flipscout/types";
 
 export interface DiscoverySettings {
+  retailer: DiscoveryRetailer;
   zip: string;
   radiusMiles: number;
   category: DiscoveryCategory;
@@ -8,14 +10,15 @@ export interface DiscoverySettings {
   sort: "default" | "discount" | "price";
 }
 export const defaultDiscoverySettings: DiscoverySettings = {
-  zip: "33511", radiusMiles: 25, category: "all", kind: "all", sort: "default",
+  retailer:"home-depot", zip: "33511", radiusMiles: 25, category: "all", kind: "all", sort: "default",
 };
 export const discoveryStorageKey = "flipscout.discovery.settings.v1";
-const keys = ["zip", "radiusMiles", "category", "kind", "sort"] as const;
+const keys = ["retailer", "zip", "radiusMiles", "category", "kind", "sort"] as const;
 export function normalizeSettings(value: unknown): DiscoverySettings {
   const v = value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown> : {};
   return {
+    retailer:discoveryRetailers.some(r=>r.id===v.retailer)?v.retailer as DiscoveryRetailer:"home-depot",
     zip: typeof v.zip === "string" && /^\d{5}$/.test(v.zip) ? v.zip : "33511",
     radiusMiles: typeof v.radiusMiles === "number" && [5,10,15,20,25].includes(v.radiusMiles) ? v.radiusMiles : 25,
     category: "all",
@@ -41,7 +44,7 @@ export function restoreSettings(search: string, saved: string | null): Discovery
 export function searchSettingsParams(settings: DiscoverySettings): string {
   const safe = normalizeSettings(settings);
   return new URLSearchParams({
-    zip: safe.zip, radiusMiles: String(safe.radiusMiles),
+    retailer:safe.retailer, zip: safe.zip, radiusMiles: String(safe.radiusMiles),
     kind: safe.kind, sort: safe.sort,
   }).toString();
 }

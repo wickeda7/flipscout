@@ -181,3 +181,30 @@ and production web build passed. No paid provider requests were made.
 Existing live provider 503 limitations and single-store coverage still apply.
 Run yarn test:discovery, yarn typecheck:api and yarn build:web --webpack.
 No migration or environment changes are required.
+
+## Retailer selection
+
+Find deals now offers Home Depot, Lowe’s, Walmart, Target, Dollar General,
+Walgreens, CVS, Costco, Sam’s Club, Best Buy, Tractor Supply and Office Depot.
+Home Depot is the default and retains the existing pilot discovery connection.
+The other retailers are explicitly marked Not connected for deal discovery.
+Selecting one clears previous results and disables Find deals. It does not
+consume credits or return demo inventory. The separate experimental Best Buy
+SKU lookup is not a broad deal-discovery connection.
+
+Retailer choice is saved on this device and included in shared search links.
+Existing saved settings and links default to Home Depot. Changing retailer
+does not automatically run a search.
+
+The shared client uses GET /v1/discovery with retailer=home-depot. The older
+/v1/discovery/home-depot route remains available. Recognized but disconnected
+retailers fail with RETAILER_NOT_CONNECTED before geolocation or provider calls.
+Unknown and repeated retailer query parameters fail validation.
+
+Validation: 28 discovery/location/settings tests, API typecheck, and production
+web build passed. No live retailer requests were made. Coverage and previous
+live provider failures remain unchanged.
+
+Upgrade: preserve environment files, run yarn install --frozen-lockfile, then
+restart yarn dev:api and yarn dev:web in separate terminals. No database changes.
+Check with yarn test:discovery, yarn typecheck:api, yarn build:web --webpack.

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { discoveryRetailers, type DiscoveryRetailer } from "@flipscout/types";
 import type { DiscoveryCategory, DiscoveryKind, DiscoveryQuery, DiscoveryResponse } from "@flipscout/types";
 import { defaultDiscoverySettings, discoveryStorageKey, restoreSettings, searchSettingsParams } from "@/lib/discovery-settings";
 import { flipScoutApi } from "@/lib/api";
@@ -9,6 +10,7 @@ const money=(n:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency
 const button="rounded-xl border border-white/20 px-4 py-3 text-sm disabled:opacity-40";
 export function DealDiscovery() {
   const {t,locale,setLocale}=useI18n();
+  const [retailer,setRetailer]=useState<DiscoveryRetailer>("home-depot");
   const [category,setCategory]=useState<DiscoveryCategory>("all");
   const [zip,setZip]=useState("33511");
   const [radiusMiles,setRadiusMiles]=useState(25);
@@ -26,26 +28,26 @@ export function DealDiscovery() {
     let saved:string|null=null;
     try { saved=localStorage.getItem(discoveryStorageKey); } catch { /* Storage may be disabled. */ }
     const settings=restoreSettings(window.location.search,saved);
-    setZip(settings.zip);setRadiusMiles(settings.radiusMiles);setCategory(settings.category);
+    setRetailer(settings.retailer);setZip(settings.zip);setRadiusMiles(settings.radiusMiles);setCategory(settings.category);
     setKind(settings.kind);setSort(settings.sort);setReady(true);
   },[]);
   useEffect(()=>{
     if(!ready||!/^\d{5}$/.test(zip))return;
-    const settings={zip,radiusMiles,category,kind,sort};
+    const settings={retailer,zip,radiusMiles,category,kind,sort};
     try {localStorage.setItem(discoveryStorageKey,JSON.stringify(settings));} catch { /* Search still works without storage. */ }
     // Keep refresh/bookmark behavior aligned with the controls, without navigation or fetches.
     try {window.history.replaceState(window.history.state,"",`/?${searchSettingsParams(settings)}`);} catch { /* URL updates are optional. */ }
     setShareState(null);setShareUrl("");
-  },[ready,zip,radiusMiles,category,kind,sort]);
+  },[ready,retailer,zip,radiusMiles,category,kind,sort]);
   async function shareSearch() {
-    const url=`${window.location.origin}/?${searchSettingsParams({zip,radiusMiles,category,kind,sort})}`;
+    const url=`${window.location.origin}/?${searchSettingsParams({retailer,zip,radiusMiles,category,kind,sort})}`;
     setShareUrl(url);
     try {await navigator.clipboard.writeText(url);setShareState("copied");}
     catch {setShareState("copyHelp");}
   }
   function resetSettings() {
     const settings=defaultDiscoverySettings;
-    setZip(settings.zip);setRadiusMiles(settings.radiusMiles);setCategory(settings.category);
+    setRetailer(settings.retailer);setZip(settings.zip);setRadiusMiles(settings.radiusMiles);setCategory(settings.category);
     setKind(settings.kind);setSort(settings.sort);setQuery(null);setResult(null);setFailed(null);
     setShareState(null);setShareUrl("");
   }
@@ -55,7 +57,7 @@ export function DealDiscovery() {
     const controller=new AbortController();let active=true;
     const timer=setTimeout(()=>controller.abort(),640000);
     setLoading(true);setFailed(null);setResult(null);
-    flipScoutApi.discoverHomeDepot(query,controller.signal)
+    flipScoutApi.discoverDeals(query,controller.signal)
       .then(data=>{if(active)setResult(data);})
       .catch(e=>{if(active)setFailed(e?.code==="SERPAPI_KEY_MISSING"?"setup":e?.code==="ZIP_NOT_FOUND"?"zipError":e?.code==="ZIP_LOOKUP_UNAVAILABLE"?"locationError":"failed");})
       .finally(()=>{clearTimeout(timer);if(active)setLoading(false);});
@@ -72,13 +74,16 @@ export function DealDiscovery() {
   }
   return <main className="min-w-0 flex-1 p-4 sm:p-8"><div className="mx-auto max-w-6xl">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3 lg:hidden"><Link href="/" className="font-bold">FlipScout</Link><div className="flex gap-3 text-sm"><Link href="/stores">{t("nav.stores")}</Link><button type="button" onClick={()=>setLocale(locale==="en"?"vi":"en")}>{locale==="en"?"Tiếng Việt":"English"}</button></div></div>
-    <p className="text-sm text-emerald-300">{t("discover.location")}</p>
+    <p className="text-sm text-emerald-300">{retailer==="home-depot"?t("discover.location"):discoveryRetailers.find(r=>r.id===retailer)?.name}</p>
     <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{t("discover.title")}</h1>
-    <p className="mt-3 max-w-3xl text-neutral-400">{t("discover.description")}</p>
-    <form className="my-6 grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 sm:grid-cols-3" onSubmit={e=>{e.preventDefault();setQuery({category,kind,page:1,zip,radiusMiles});}}>
+    <p className="mt-3 max-w-3xl text-neutral-400">{t("discover.retailerDescription")}</p>
+    <form className="my-6 grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 sm:grid-cols-2 xl:grid-cols-4" onSubmit={e=>{e.preventDefault();if(retailer!=="home-depot")return;setQuery({retailer,category,kind,page:1,zip,radiusMiles});}}>
+      <label className="text-sm">{t("discover.retailer")}<select value={retailer} onChange={e=>{
+        setRetailer(e.target.value as DiscoveryRetailer);setQuery(null);setResult(null);setFailed(null);setLoading(false);
+      }} className="mt-2 w-full rounded-xl border border-white/20 bg-neutral-950 p-3">{discoveryRetailers.map(r=><option key={r.id} value={r.id}>{r.name}{r.id==="home-depot"?"":` — ${t("discover.notConnected")}`}</option>)}</select></label>
       <label className="text-sm">{t("discover.zip")}<input required pattern="[0-9]{5}" maxLength={5} inputMode="numeric" autoComplete="postal-code" value={zip} onChange={e=>setZip(e.target.value)} className="mt-2 w-full rounded-xl border border-white/20 bg-neutral-950 p-3" /></label>
       <label className="text-sm">{t("discover.radius")}<select value={radiusMiles} onChange={e=>setRadiusMiles(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-white/20 bg-neutral-950 p-3">{[5,10,15,20,25].map(n=><option key={n} value={n}>{n} {t("discover.miles")}</option>)}</select></label>
-      <button type="submit" disabled={loading||!ready} className={`${button} mt-auto bg-emerald-400 font-semibold text-black`}>{t(loading?"discover.loading":"discover.search")}</button>
+      <button type="submit" disabled={loading||!ready||retailer!=="home-depot"} className={`${button} mt-auto bg-emerald-400 font-semibold text-black`}>{t(loading?"discover.loading":"discover.search")}</button>
     </form>
     <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={t("discover.kind")}>
       {(["all","sale","clearance","penny"] as const).map(k=><button key={k} type="button" disabled={loading||!ready} aria-pressed={kind===k} onClick={()=>chooseKind(k)} className={`rounded-full px-5 py-3 text-sm transition disabled:opacity-40 ${kind===k?"bg-blue-500 text-white":"bg-white/5 text-neutral-300 hover:bg-white/10"}`}>{t(`discover.${k}`)}</button>)}
@@ -94,9 +99,9 @@ export function DealDiscovery() {
       {shareState==="copyHelp"&&<input aria-label={t("discover.share")} readOnly value={shareUrl} onFocus={e=>e.target.select()} className="mt-2 w-full rounded-lg border border-white/20 bg-neutral-950 p-3" />}
     </div>
     <p className="mb-3 text-xs text-neutral-400">{t("discover.sortHelp")}</p>
-    <p className="mb-5 text-xs leading-5 text-neutral-400">{t("discover.coverage")}</p>
+    {retailer==="home-depot"?<p className="mb-5 text-xs leading-5 text-neutral-400">{t("discover.coverage")}</p>:<p role="status" className="mb-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-5 text-sm text-amber-200">{discoveryRetailers.find(r=>r.id===retailer)?.name}: {t("discover.retailerUnavailable")}</p>}
     <div aria-live="polite" aria-busy={loading}>
-      {!query&&<div className="rounded-2xl border border-dashed border-white/20 p-8"><h2 className="text-lg font-medium">{t("discover.start")}</h2><p className="mt-2 text-sm text-neutral-400">{t("discover.startHelp")}</p></div>}
+      {!query&&retailer==="home-depot"&&<div className="rounded-2xl border border-dashed border-white/20 p-8"><h2 className="text-lg font-medium">{t("discover.start")}</h2><p className="mt-2 text-sm text-neutral-400">{t("discover.startHelp")}</p></div>}
       {loading&&<p className="py-12 text-neutral-400">{t("discover.wait")}</p>}
       {failed&&<div role="alert" className="rounded-xl bg-amber-500/10 p-5 text-amber-200"><p>{t(`discover.${failed}`)}</p><button type="button" className={`${button} mt-4`} onClick={()=>setAttempt(n=>n+1)}>{t("inventory.retry")}</button></div>}
       {result&&<>

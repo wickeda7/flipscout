@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import { defaultDiscoverySettings, restoreSettings, searchSettingsParams } from "../../web/src/lib/discovery-settings.js";
 
 test("saved settings restore without any query execution state",()=>{
-  const settings={zip:"00501",radiusMiles:10,category:"all",kind:"penny",sort:"price"} as const;
+  const settings={retailer:"home-depot",zip:"00501",radiusMiles:10,category:"all",kind:"penny",sort:"price"} as const;
   assert.deepEqual(restoreSettings("",JSON.stringify(settings)),settings);
   assert.equal("page" in restoreSettings("",JSON.stringify(settings)),false);
 });
 test("explicit shared links override local preferences and preserve leading ZIP zeros",()=>{
-  const settings={zip:"00501",radiusMiles:15,category:"all",kind:"sale",sort:"discount"} as const;
+  const settings={retailer:"home-depot",zip:"00501",radiusMiles:15,category:"all",kind:"sale",sort:"discount"} as const;
   assert.deepEqual(restoreSettings("?"+searchSettingsParams(settings),JSON.stringify(defaultDiscoverySettings)),settings);
 });
 test("malformed storage and untrusted link settings safely fall back",()=>{
@@ -29,4 +29,12 @@ test("legacy category links restore location but never restrict the new search",
   const r=restoreSettings("?zip=10001&category=tools&radiusMiles=10",null);
   assert.equal(r.category,"all");assert.equal(r.zip,"10001");
   assert.doesNotMatch(searchSettingsParams(r),/category/);
+});
+
+test("retailer is remembered and shared while older settings default to Home Depot",()=>{
+  const selected={...defaultDiscoverySettings,retailer:"target" as const};
+  assert.equal(restoreSettings("",JSON.stringify(selected)).retailer,"target");
+  assert.equal(restoreSettings("?"+searchSettingsParams(selected),null).retailer,"target");
+  assert.equal(restoreSettings("?retailer=unknown",null).retailer,"home-depot");
+  assert.equal(restoreSettings("",JSON.stringify({zip:"33511"})).retailer,"home-depot");
 });

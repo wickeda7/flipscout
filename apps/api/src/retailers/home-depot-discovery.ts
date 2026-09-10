@@ -1,3 +1,4 @@
+import { discoveryRetailers } from "@flipscout/types";
 import { locateZip, distanceMiles } from "./discovery-location.js";
 import type { DiscoveryQuery, DiscoveryResponse, DiscoveredDeal } from "@flipscout/types";
 import { RequestError } from "../security/request-error.js";
@@ -6,12 +7,14 @@ import { requestSerpApi } from "./serpapi-request.js";
 export const categories = {tools:"tools",appliances:"appliances",lighting:"lighting",garden:"lawn and garden",storage:"storage"};
 export function parseDiscoveryQuery(params: URLSearchParams): DiscoveryQuery {
   const invalid=():never=>{throw new RequestError("Invalid deal filters.",400,"INVALID_DISCOVERY_QUERY");};
-  for(const key of params.keys())if(!["category","kind","page","zip","radiusMiles"].includes(key)||params.getAll(key).length!==1)invalid();
+  for(const key of params.keys())if(!["category","kind","page","zip","radiusMiles","retailer"].includes(key)||params.getAll(key).length!==1)invalid();
   const category=params.get("category")??"all",kind=params.get("kind")??"all",page=params.get("page")??"1";
   if((category!=="all"&&!Object.hasOwn(categories,category))||!["all","sale","clearance","penny"].includes(kind)||!/^([1-9]|10)$/.test(page))invalid();
   const zip=params.get("zip")??"33511",radius=params.get("radiusMiles")??"25";
   if(!/^\d{5}$/.test(zip)||! /^(?:[1-9]|1[0-9]|2[0-5])$/.test(radius))invalid();
-  return {zip,radiusMiles:Number(radius),category:category as DiscoveryQuery["category"],kind:kind as DiscoveryQuery["kind"],page:Number(page)};
+  const retailer=params.get("retailer")??"home-depot";
+  if(!discoveryRetailers.some(r=>r.id===retailer))invalid();
+  return {retailer:retailer as DiscoveryQuery["retailer"],zip,radiusMiles:Number(radius),category:category as DiscoveryQuery["category"],kind:kind as DiscoveryQuery["kind"],page:Number(page)};
 }
 const obj=(v:unknown):v is Record<string,any>=>v!==null&&typeof v==="object"&&!Array.isArray(v);
 const amount=(v:unknown):number|null=>typeof v==="number"&&Number.isFinite(v)&&v>=0?v:null;
@@ -65,7 +68,8 @@ export class HomeDepotDiscovery {
   private running=new Map<string,Promise<DiscoveryResponse>>();
   constructor(private readonly request:typeof requestSerpApi=requestSerpApi,private readonly now=Date.now,private readonly locate:typeof locateZip=locateZip){}
   async search(query:DiscoveryQuery):Promise<DiscoveryResponse> {
-    query={...query,zip:query.zip??"33511",radiusMiles:query.radiusMiles??25};
+    if(query.retailer&&query.retailer!=="home-depot")throw new ConnectorError("RETAILER_NOT_CONNECTED");
+    query={...query,retailer:"home-depot",zip:query.zip??"33511",radiusMiles:query.radiusMiles??25};
     const key=JSON.stringify(query),cached=this.cache.get(key);
     if(cached&&cached.expires>this.now())return structuredClone(cached.result);
     const pending=this.running.get(key);if(pending)return structuredClone(await pending);

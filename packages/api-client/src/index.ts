@@ -224,7 +224,11 @@ export class FlipScoutApiClient {
   }
 
   async discoverHomeDepot(query: DiscoveryQuery, signal?: AbortSignal): Promise<DiscoveryResponse> {
-    return this.request<DiscoveryResponse>(`/v1/discovery/home-depot?${new URLSearchParams({category:query.category,kind:query.kind,page:String(query.page),zip:query.zip??"33511",radiusMiles:String(query.radiusMiles??25)})}`,{signal});
+    return this.discoverDeals({...query,retailer:"home-depot"},signal);
+  }
+
+  async discoverDeals(query: DiscoveryQuery, signal?: AbortSignal): Promise<DiscoveryResponse> {
+    return this.request<DiscoveryResponse>(`/v1/discovery?${new URLSearchParams({retailer:query.retailer??"home-depot",category:query.category,kind:query.kind,page:String(query.page),zip:query.zip??"33511",radiusMiles:String(query.radiusMiles??25)})}`,{signal});
   }
 
   async optimizeRoute(

@@ -57,7 +57,7 @@ test("deduplicates products and drops untrusted image locations", () => {
 test("filters and pages are bounded and cannot override provider credentials", () => {
   for(const input of ["api_key=x","page=11","page=-1","category=__proto__","kind=x","page=1&page=2"])
     assert.throws(()=>parseDiscoveryQuery(new URLSearchParams(input)),/Invalid deal filters/);
-  assert.deepEqual(parseDiscoveryQuery(new URLSearchParams()),{...query,category:"all",zip:"33511",radiusMiles:25});
+  assert.deepEqual(parseDiscoveryQuery(new URLSearchParams()),{...query,retailer:"home-depot",category:"all",zip:"33511",radiusMiles:25});
 });
 test("coalesces concurrent identical searches, caches and clones results", async () => {
   let calls=0;
@@ -146,4 +146,14 @@ test("automatic discovery reports partial coverage and total failure distinctly"
   assert.deepEqual(r.coverage,{completed:4,failed:1,total:5});
   const failed=new HomeDepotDiscovery(async()=>{throw Error("fixture failure");},Date.now,near);
   await assert.rejects(failed.search({...query,category:"all"}),/fixture failure/);
+});
+
+test("retailer selection is validated and unsupported retailers never call providers",async()=>{
+  assert.equal(parseDiscoveryQuery(new URLSearchParams("retailer=walmart")).retailer,"walmart");
+  for(const value of ["unknown","../home-depot","walmart&retailer=target"])
+    assert.throws(()=>parseDiscoveryQuery(new URLSearchParams("retailer="+value)),/Invalid deal filters/);
+  let calls=0,locations=0;
+  const service=new HomeDepotDiscovery(async()=>{calls++;return fixture();},Date.now,async()=>{locations++;return near();});
+  await assert.rejects(service.search({...query,retailer:"walmart"}),/RETAILER_NOT_CONNECTED/);
+  assert.equal(calls,0);assert.equal(locations,0);
 });

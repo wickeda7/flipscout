@@ -204,7 +204,7 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    if (request.method === "GET" && url.pathname === "/v1/discovery/home-depot") {
+    if (request.method === "GET" && (url.pathname === "/v1/discovery" || url.pathname === "/v1/discovery/home-depot")) {
       if (!enforceRateLimit(request, response, "discovery", 10, 60 * 1000)) return;
       response.setHeader("Cache-Control", "no-store");
       try { writeJson(response, 200, await discovery.search(parseDiscoveryQuery(url.searchParams))); }
