@@ -2,6 +2,7 @@ import type { Pool } from "pg";
 
 // Presence checks only: constraints, types and indexes are maintained by schema.sql.
 export const requiredColumns: Record<string, string[]> = {
+  "discovery_search_cache": ["cache_key","zip_code","retailer","scope","result","fetched_at","expires_at"],
   "users": [
     "id",
     "email",

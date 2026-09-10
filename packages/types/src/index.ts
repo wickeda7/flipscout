@@ -333,7 +333,8 @@ export interface DiscoveredDeal {
   pickupStatus: "local" | "ship-to-store" | "other-store" | "unknown";
 }
 export interface DiscoveryResponse {
-  source: "serpapi-home-depot"; retailer: "Home Depot"; storeId: "6305"; storeName: string; zip: "33511";
+  cache?: { source: "database" | "provider"; fetchedAt: string; expiresAt: string };
+  source: "serpapi-home-depot" | "serpapi-walmart"; retailer: "Home Depot" | "Walmart"; storeId: "6305" | "3463"; storeName: string; zip: "33511";
   query: DiscoveryQuery; fetchedAt: string; providerCreatedAt: string | null;
   coverage?: { completed: number; failed: number; total: number; groups?: { category: DiscoveryCategory; status: "success" | "failed"; productsChecked: number; providerCreatedAt: string | null; code: string | null }[] };
   location?: { zip: string; radiusMiles: number; distanceMiles: number; covered: boolean };

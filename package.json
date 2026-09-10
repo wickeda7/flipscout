@@ -28,7 +28,9 @@
     "test:home-depot": "yarn workspace @flipscout/api test:home-depot",
     "test:discovery": "yarn workspace @flipscout/api test:discovery",
     "check:discovery": "yarn workspace @flipscout/api check:discovery",
-    "check:discovery:scan": "yarn workspace @flipscout/api check:discovery:scan"
+    "check:discovery:scan": "yarn workspace @flipscout/api check:discovery:scan",
+    "test:discovery:cache": "yarn workspace @flipscout/api test:discovery:cache",
+    "test:walmart": "yarn workspace @flipscout/api test:walmart"
   },
   "engines": {
     "node": ">=20.9.0"

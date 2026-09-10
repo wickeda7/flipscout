@@ -1,4 +1,5 @@
-import { HomeDepotDiscovery, parseDiscoveryQuery } from "./retailers/home-depot-discovery.js";
+import { createDatabaseDiscovery } from "./retailers/discovery-cache.js";
+import { parseDiscoveryQuery } from "./retailers/home-depot-discovery.js";
 import { ConnectorError } from "./ingestion/http-config.js";
 import { BestBuyClient, parseBestBuyQuery } from "./retailers/bestbuy.js";
 import { isMissingSchemaError, migrationAction, schemaErrorCode } from "./database/schema-readiness.js";
@@ -31,7 +32,7 @@ const {
 } = createProviders();
 const emailProvider = createEmailProvider();
 const rateLimiter = new InMemoryRateLimiter();
-const discovery = new HomeDepotDiscovery();
+const discovery = createDatabaseDiscovery();
 
 const DEV_USER_ID =
   process.env.DEV_USER_ID ?? "00000000-0000-0000-0000-000000000001";

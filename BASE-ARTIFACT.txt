@@ -1,2 +1,2 @@
-Continues flipscout-phase5-local-filters.zip.
-Current checkpoint: retry unchecked groups while preserving successful results.
+Continues flipscout-phase5-partial-retry.zip.
+Current checkpoint: shared 12-hour PostgreSQL search cache and verified Walmart pilot.

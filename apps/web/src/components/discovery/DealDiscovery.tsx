@@ -19,7 +19,7 @@ export function DealDiscovery() {
   const [query,setQuery]=useState<DiscoveryQuery|null>(null);
   const [result,setResult]=useState<DiscoveryResponse|null>(null);
   const [loading,setLoading]=useState(false);
-  const [failed,setFailed]=useState<"setup"|"failed"|"zipError"|"locationError"|"cooldown"|"retryExpired"|null>(null);
+  const [failed,setFailed]=useState<"setup"|"failed"|"zipError"|"locationError"|"cooldown"|"retryExpired"|"databaseError"|"unsupportedLocation"|null>(null);
   const [attempt,setAttempt]=useState(0);
   const [ready,setReady]=useState(false);
   const [shareState,setShareState]=useState<"copied"|"copyHelp"|null>(null);
@@ -59,7 +59,7 @@ export function DealDiscovery() {
     setLoading(true);setFailed(null);if(!query.retryFailed)setResult(null);
     flipScoutApi.discoverDeals(query,controller.signal)
       .then(data=>{if(active)setResult(data);})
-      .catch(e=>{if(active)setFailed(e?.code==="DISCOVERY_RETRY_EXPIRED"?"retryExpired":e?.code==="DISCOVERY_COOLDOWN"?"cooldown":e?.code==="SERPAPI_KEY_MISSING"?"setup":e?.code==="ZIP_NOT_FOUND"?"zipError":e?.code==="ZIP_LOOKUP_UNAVAILABLE"?"locationError":"failed");})
+      .catch(e=>{if(active)setFailed(e?.code==="DISCOVERY_LOCATION_UNSUPPORTED"?"unsupportedLocation":e?.code?.startsWith("DISCOVERY_DATABASE")?"databaseError":e?.code==="DISCOVERY_RETRY_EXPIRED"?"retryExpired":e?.code==="DISCOVERY_COOLDOWN"?"cooldown":e?.code==="SERPAPI_KEY_MISSING"?"setup":e?.code==="ZIP_NOT_FOUND"?"zipError":e?.code==="ZIP_LOOKUP_UNAVAILABLE"?"locationError":"failed");})
       .finally(()=>{clearTimeout(timer);if(active)setLoading(false);});
     return()=>{active=false;controller.abort();clearTimeout(timer);};
   },[query,attempt]);
@@ -76,13 +76,13 @@ export function DealDiscovery() {
     <p className="text-sm text-emerald-300">{retailer==="home-depot"?t("discover.location"):discoveryRetailers.find(r=>r.id===retailer)?.name}</p>
     <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{t("discover.title")}</h1>
     <p className="mt-3 max-w-3xl text-neutral-400">{t("discover.retailerDescription")}</p>
-    <form className="my-6 grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 sm:grid-cols-2 xl:grid-cols-4" onSubmit={e=>{e.preventDefault();if(retailer!=="home-depot")return;setQuery({retailer,category,kind:"all",page:1,zip,radiusMiles});}}>
+    <form className="my-6 grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 sm:grid-cols-2 xl:grid-cols-4" onSubmit={e=>{e.preventDefault();if(!["home-depot","walmart"].includes(retailer))return;setQuery({retailer,category,kind:"all",page:1,zip,radiusMiles});}}>
       <label className="text-sm">{t("discover.retailer")}<select value={retailer} onChange={e=>{
         setRetailer(e.target.value as DiscoveryRetailer);setQuery(null);setResult(null);setFailed(null);setLoading(false);
-      }} className="mt-2 w-full rounded-xl border border-white/20 bg-neutral-950 p-3">{discoveryRetailers.map(r=><option key={r.id} value={r.id}>{r.name}{r.id==="home-depot"?"":` — ${t("discover.notConnected")}`}</option>)}</select></label>
+      }} className="mt-2 w-full rounded-xl border border-white/20 bg-neutral-950 p-3">{discoveryRetailers.map(r=><option key={r.id} value={r.id}>{r.name}{["home-depot","walmart"].includes(r.id)?"":` — ${t("discover.notConnected")}`}</option>)}</select></label>
       <label className="text-sm">{t("discover.zip")}<input required pattern="[0-9]{5}" maxLength={5} inputMode="numeric" autoComplete="postal-code" value={zip} onChange={e=>setZip(e.target.value)} className="mt-2 w-full rounded-xl border border-white/20 bg-neutral-950 p-3" /></label>
-      <label className="text-sm">{t("discover.radius")}<select value={radiusMiles} onChange={e=>setRadiusMiles(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-white/20 bg-neutral-950 p-3">{[5,10,15,20,25].map(n=><option key={n} value={n}>{n} {t("discover.miles")}</option>)}</select></label>
-      <button type="submit" disabled={loading||!ready||retailer!=="home-depot"} className={`${button} mt-auto bg-emerald-400 font-semibold text-black`}>{t(loading?"discover.loading":"discover.search")}</button>
+      <label className="text-sm">{t("discover.radius")}<select disabled={retailer==="walmart"} value={radiusMiles} onChange={e=>setRadiusMiles(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-white/20 bg-neutral-950 p-3">{[5,10,15,20,25].map(n=><option key={n} value={n}>{n} {t("discover.miles")}</option>)}</select></label>
+      <button type="submit" disabled={loading||!ready||!["home-depot","walmart"].includes(retailer)} className={`${button} mt-auto bg-emerald-400 font-semibold text-black`}>{t(loading?"discover.loading":"discover.search")}</button>
     </form>
     <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={t("discover.kind")}>
       {(["all","sale","clearance","penny"] as const).map(k=><button key={k} type="button" disabled={!ready} aria-pressed={kind===k} onClick={()=>chooseKind(k)} className={`rounded-full px-5 py-3 text-sm transition disabled:opacity-40 ${kind===k?"bg-blue-500 text-white":"bg-white/5 text-neutral-300 hover:bg-white/10"}`}>{t(`discover.${k}`)}</button>)}
@@ -98,17 +98,18 @@ export function DealDiscovery() {
       {shareState==="copyHelp"&&<input aria-label={t("discover.share")} readOnly value={shareUrl} onFocus={e=>e.target.select()} className="mt-2 w-full rounded-lg border border-white/20 bg-neutral-950 p-3" />}
     </div>
     <p className="mb-3 text-xs text-neutral-400">{t("discover.sortHelp")}</p>
-    {retailer==="home-depot"?<p className="mb-5 text-xs leading-5 text-neutral-400">{t("discover.coverage")}</p>:<p role="status" className="mb-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-5 text-sm text-amber-200">{discoveryRetailers.find(r=>r.id===retailer)?.name}: {t("discover.retailerUnavailable")}</p>}
+    {["home-depot","walmart"].includes(retailer)?<p className="mb-5 text-xs leading-5 text-neutral-400">{t(retailer==="walmart"?"discover.walmartCoverage":"discover.coverage")}</p>:<p role="status" className="mb-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-5 text-sm text-amber-200">{discoveryRetailers.find(r=>r.id===retailer)?.name}: {t("discover.retailerUnavailable")}</p>}
     <div aria-live="polite" aria-busy={loading}>
-      {!query&&retailer==="home-depot"&&<div className="rounded-2xl border border-dashed border-white/20 p-8"><h2 className="text-lg font-medium">{t("discover.start")}</h2><p className="mt-2 text-sm text-neutral-400">{t("discover.startHelp")}</p></div>}
+      {!query&&["home-depot","walmart"].includes(retailer)&&<div className="rounded-2xl border border-dashed border-white/20 p-8"><h2 className="text-lg font-medium">{t("discover.start")}</h2><p className="mt-2 text-sm text-neutral-400">{t("discover.startHelp")}</p></div>}
       {loading&&<p className="py-12 text-neutral-400">{t("discover.wait")}</p>}
       {failed&&<div role="alert" className="rounded-xl bg-amber-500/10 p-5 text-amber-200"><p>{t(`discover.${failed}`)}</p><button type="button" className={`${button} mt-4`} onClick={()=>setAttempt(n=>n+1)}>{t("inventory.retry")}</button></div>}
       {result&&<>
+        {result.cache&&<p className="mb-4 text-xs text-neutral-400">{t(result.cache.source==="database"?"discover.cached":"discover.liveSaved")} · {t("discover.expires")}: {new Date(result.cache.expiresAt).toLocaleString("en-US")}</p>}
         {result.coverage?.groups&&<details className="mb-4 rounded-xl border border-white/10 p-4 text-sm">
           <summary className="cursor-pointer text-neutral-300">{t("discover.searchDetails")} · {result.coverage.completed}/{result.coverage.total} {t("discover.groupsChecked")}</summary>
           <ul className="mt-3 space-y-2">{result.coverage.groups.map(group=><li key={group.category} className="flex flex-wrap justify-between gap-2 text-neutral-400"><span>{t(`discover.${group.category}`)}</span><span>{group.status==="success"?`${group.productsChecked} ${t("discover.checked")}`:t("discover.groupFailed")}</span></li>)}</ul>
         </details>}
-        {result.coverage&&result.coverage.failed>0&&<div role="status" className="mb-4 rounded-xl bg-amber-500/10 p-4 text-sm text-amber-200"><p>{t("discover.partial")} ({result.coverage.completed}/{result.coverage.total})</p><button type="button" disabled={loading} className={`${button} mt-3`} onClick={()=>setQuery({...result.query,retryFailed:true})}>{t("discover.retryMissing")}</button><p className="mt-2 text-xs">{t("discover.retryHelp")}</p></div>}
+        {result.coverage&&result.coverage.failed>0&&<div role="status" className="mb-4 rounded-xl bg-amber-500/10 p-4 text-sm text-amber-200"><p>{t("discover.partial")} ({result.coverage.completed}/{result.coverage.total})</p></div>}
         {result.location&&<p className="mb-4 rounded-xl border border-white/10 p-4 text-sm text-neutral-300">ZIP {result.location.zip} · {result.location.radiusMiles} {t("discover.miles")} · {result.location.covered?`Home Depot #6305 · ${result.location.distanceMiles} ${t("discover.approx")}`:t("discover.noCoverage")}</p>}
         <div className="mb-4 text-sm text-neutral-400"><p>{t(`discover.${kind}`)} · {deals.length} {t("discover.matches")} · {t("find.page")} {result.query.page}</p><p className="mt-1 text-xs">{t("discover.fetched")}: {new Date(result.fetchedAt).toLocaleString("en-US")}{result.providerCreatedAt?` · ${t("discover.sourceTime")}: ${new Date(result.providerCreatedAt).toLocaleString("en-US")}`:""}</p></div>
         {deals.length===0&&result.location?.covered!==false&&<p className="rounded-xl border border-white/10 p-6 text-neutral-400">{t("discover.empty")}</p>}
@@ -116,9 +117,9 @@ export function DealDiscovery() {
           {deal.imageUrl&&<div className="flex h-44 items-center justify-center bg-white p-4"><img src={deal.imageUrl} alt="" loading="lazy" className="h-full w-full object-contain" /></div>}
           <div className="flex flex-1 flex-col p-5"><span className="text-xs font-semibold uppercase tracking-wide text-emerald-300">{t(`discover.${deal.kind}`)}</span><h2 className="mt-2 font-semibold leading-6">{deal.title}</h2><div className="mt-4 flex items-baseline gap-3"><strong className="text-3xl">{money(deal.price)}</strong>{deal.originalPrice!==null&&<del className="text-sm text-neutral-500">{money(deal.originalPrice)}</del>}</div>
           {deal.savings!==null&&<p className="mt-2 text-sm text-emerald-300">{t("discover.save")} {money(deal.savings)}</p>}
-          <p className="mt-4 text-xs text-neutral-400">Home Depot · {result.storeName} #{result.storeId}</p><p className="mt-2 text-xs text-neutral-400">{deal.pickupStatus==="local"?`${t("discover.localStock")}: ${deal.quantity}`:deal.pickupStatus==="ship-to-store"?t("discover.shipToStore"):deal.pickupStatus==="other-store"?t("discover.otherStore"):deal.pickupText??t("discover.unknown")}</p>
+          <p className="mt-4 text-xs text-neutral-400">{result.retailer} · {result.storeName} #{result.storeId}</p><p className="mt-2 text-xs text-neutral-400">{deal.pickupStatus==="local"?`${t("discover.localStock")}: ${deal.quantity}`:deal.pickupStatus==="ship-to-store"?t("discover.shipToStore"):deal.pickupStatus==="other-store"?t("discover.otherStore"):deal.pickupText??t("discover.unknown")}</p>
           {deal.kind==="penny"&&<p className="mt-3 text-xs text-amber-200">{t("discover.verifyPenny")}</p>}
-          <a href={deal.productUrl} target="_blank" rel="noopener noreferrer" className={`${button} mt-5 text-center`}>{t("discover.open")}</a></div>
+          <a href={deal.productUrl} target="_blank" rel="noopener noreferrer" className={`${button} mt-5 text-center`}>{t("discover.viewRetailer")} {result.retailer}</a></div>
         </article>)}</div>
         <nav className="my-6 flex items-center justify-between" aria-label={t("find.page")}><button type="button" className={button} disabled={loading||result.query.page===1} onClick={()=>setQuery({...result.query,page:result.query.page-1})}>{t("find.previous")}</button><button type="button" className={button} disabled={loading||!result.hasMore} onClick={()=>setQuery({...result.query,page:result.query.page+1})}>{t("find.next")}</button></nav>
         <p className="text-xs text-neutral-500">{result.productsChecked} {t("discover.checked")}{result.skippedProducts>0?` · ${result.skippedProducts} ${t("discover.skipped")}`:""}</p>

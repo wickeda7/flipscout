@@ -24,7 +24,9 @@
     "test:home-depot": "tsx --test tests/home-depot-pilot.test.ts",
     "test:discovery": "tsx --test tests/discovery.test.ts tests/discovery-location.test.ts tests/discovery-settings.test.ts",
     "check:discovery": "tsx scripts/check-discovery.ts",
-    "check:discovery:scan": "tsx scripts/check-discovery-scan.ts"
+    "check:discovery:scan": "tsx scripts/check-discovery-scan.ts",
+    "test:discovery:cache": "tsx --test tests/discovery-cache.test.ts",
+    "test:walmart": "tsx --test tests/walmart-discovery.test.ts"
   },
   "dependencies": {
     "@flipscout/types": "0.1.0",

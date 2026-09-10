@@ -1,3 +1,5 @@
+Current checkpoint: [12-hour PostgreSQL search cache and Walmart pilot](PHASE5-DATABASE-CACHE.md). Run yarn db:migrate before using this update.
+
 Latest: [combined scan validation](PHASE5-COMBINED-SCAN.md) — live partial search returned 9 sales from 2 of 5 groups; search details now make coverage visible.
 
 # Current checkpoint: Phase 5 deal discovery
