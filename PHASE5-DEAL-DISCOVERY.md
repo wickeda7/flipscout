@@ -208,3 +208,44 @@ live provider failures remain unchanged.
 Upgrade: preserve environment files, run yarn install --frozen-lockfile, then
 restart yarn dev:api and yarn dev:web in separate terminals. No database changes.
 Check with yarn test:discovery, yarn typecheck:api, yarn build:web --webpack.
+
+## Live discovery verification and failure protection
+
+A live tools search succeeded for East Brandon #6305 / ZIP 33511. Provider
+creation time: 2026-09-10T03:03:55Z (September 9 in US Eastern time).
+It returned 24 products and two numeric markdowns:
+- Product 305019378: $384.65 versus supplied comparison price $1,099.
+- Product 324870116: $649 versus supplied comparison price $836.29.
+
+The identical provider-cached response passed the diagnostic normalizer and
+GET /v1/discovery with category=tools. HTTP 200 included two sales and a 2.8-mile
+approximate distance from ZIP center. The API's unrelated database provider was
+mock during this smoke test; discovery itself used real SerpApi data. No
+synthetic results were substituted. No PostgreSQL writes were performed.
+This validates one product group, not the complete five-group scan, penny
+coverage or all nearby stores. Local shelf stock for both sales was unconfirmed.
+
+Pickup mapping now distinguishes explicit local observations (matching store
+name, zero provider distance, nonnegative integer quantity), ship-to-store,
+another store and unknown. A returned Northgate quantity of 62 is not East
+Brandon inventory. Zero is retained when explicitly reported for the local
+store; absence stays unknown. These are provider reports, not live guarantees.
+
+When the provider returns authentication/quota/server errors or a timeout/network
+failure, discovery pauses new provider calls for 60 seconds. Queued requests
+stop; already-running calls can finish. There are no automatic retries. Cached
+results remain available. A subsequent request after cooldown may try again.
+The cooldown is per API process, not distributed.
+
+For a controlled one-request check:
+yarn check:discovery
+
+It reads apps/api/.env, makes exactly one tools search, validates the response
+and prints normalized data or a safe error code. It can consume one provider
+credit; it does not run the five-group scan. Credentials and raw provider error
+bodies are never printed. FLIPSCOUT_ENV_FILE can select another private env file.
+
+Validation: 30 discovery/location/settings tests, API typecheck and production
+build passed. Live API smoke returned 24 checked products and two sale results.
+This successful check supersedes the earlier 503-only verification status, but
+does not establish that provider reliability is resolved.

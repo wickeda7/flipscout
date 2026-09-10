@@ -43,8 +43,13 @@ export function normalizeDiscovery(raw:unknown,query:DiscoveryQuery,now=new Date
     const isSale=original!==null&&original>price;
     const kind=price===0.01?"penny":isClearance?"clearance":isSale?"sale":null;
     if(!kind||(query.kind!=="all"&&query.kind!==kind))continue;
+    const pickup=obj(p.pickup)?p.pickup:null;
+    const local=pickup&&typeof pickup.store_name==="string"&&pickup.store_name.trim().length>0&&pickup.store_name===raw.search_information?.store_name&&pickup.distance===0&&
+      Number.isSafeInteger(pickup.quantity)&&pickup.quantity>=0;
+    const pickupStatus=local?"local":pickup?.free_ship_to_store===true?"ship-to-store":
+      typeof pickup?.store_name==="string"&&pickup.store_name!==raw.search_information?.store_name?"other-store":"unknown";
     deals.push({id,title:cleanText(p.title)!,price,originalPrice:isSale?original:null,savings:isSale?Math.round((original!-price)*100)/100:null,
-      kind,promotion,productUrl:`https://www.homedepot.com/p/${id}`,imageUrl:imageUrl(p),pickupText:cleanText(p.pickup),quantity:null});
+      kind,promotion,productUrl:`https://www.homedepot.com/p/${id}`,imageUrl:imageUrl(p),pickupText:cleanText(p.pickup),quantity:local?pickup!.quantity:null,pickupStatus});
   }
   const created=raw.search_metadata?.created_at;
   const time=typeof created==="string"&&/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC$/.test(created)?Date.parse(created.replace(" ","T").replace(" UTC","Z")):NaN;
@@ -53,12 +58,20 @@ export function normalizeDiscovery(raw:unknown,query:DiscoveryQuery,now=new Date
     hasMore:query.page<10&&(!!raw.serpapi_pagination?.next||!!raw.pagination?.next)};
 }
 export class HomeDepotDiscovery {
+  private pauseUntil=0;
   private providerActive=0;
   private providerQueue:(()=>void)[]=[];
   private async fetchPage(params:Record<string,string>):Promise<unknown> {
     if(this.providerActive>=2)await new Promise<void>(resolve=>this.providerQueue.push(resolve));
     else this.providerActive++;
-    try {return await this.request(params);}
+    try {
+      if(this.now()<this.pauseUntil)throw new ConnectorError("DISCOVERY_COOLDOWN");
+      return await this.request(params);
+    } catch(error) {
+      if(error instanceof ConnectorError&&/^(SERPAPI_HTTP_(401|403|429|500|502|503|504)|SERPAPI_TIMEOUT|SERPAPI_NETWORK_ERROR)$/.test(error.code))
+        this.pauseUntil=Math.max(this.pauseUntil,this.now()+60000);
+      throw error;
+    }
     finally {
       const next=this.providerQueue.shift();
       if(next)next();else this.providerActive--;
@@ -101,7 +114,11 @@ export class HomeDepotDiscovery {
         productsChecked:successful.reduce((n,p)=>n+p.productsChecked,0),
         skippedProducts:successful.reduce((n,p)=>n+p.skippedProducts,0),
         hasMore:successful.some(p=>p.hasMore),
-        coverage:{completed:successful.length,failed:pages.length-successful.length,total:pages.length}};
+        coverage:{completed:successful.length,failed:pages.length-successful.length,total:pages.length,
+          groups:pages.map((page,index)=>page.status==="fulfilled"
+            ?{category:scopes[index],status:"success" as const,productsChecked:page.value.productsChecked,providerCreatedAt:page.value.providerCreatedAt,code:null}
+            :{category:scopes[index],status:"failed" as const,productsChecked:0,providerCreatedAt:null,
+              code:page.reason instanceof ConnectorError&&/^(SERPAPI_HTTP_[0-9]{3}|SERPAPI_(TIMEOUT|NETWORK_ERROR|KEY_MISSING)|DISCOVERY_(COOLDOWN|PROVIDER_FAILED|CONTEXT_MISMATCH|INVALID_RESPONSE)|INVALID_PROVIDER_(JSON|RESPONSE)|PROVIDER_RESPONSE_TOO_LARGE)$/.test(page.reason.code)?page.reason.code:"DISCOVERY_PROVIDER_FAILED"})}};
       result.location=location;
       if(this.cache.size>=50)this.cache.delete(this.cache.keys().next().value!);
       this.cache.set(key,{expires:this.now()+10*60*1000,result});return result;

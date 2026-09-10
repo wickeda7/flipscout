@@ -1,6 +1,8 @@
+Latest: [combined scan validation](PHASE5-COMBINED-SCAN.md) — live partial search returned 9 sales from 2 of 5 groups; search details now make coverage visible.
+
 # Current checkpoint: Phase 5 deal discovery
 
-Start with [deal-list setup and validation](PHASE5-DEAL-DISCOVERY.md). The homepage now supports sales, clearance and penny-candidate discovery for East Brandon Home Depot. Live category requests currently return provider 503 errors; no full-store or penny coverage is claimed.
+Start with [deal-list setup and validation](PHASE5-DEAL-DISCOVERY.md). The homepage now supports sales, clearance and penny-candidate discovery for East Brandon Home Depot. One live product-group search now passes through the shared API: 24 products and two reported sales. Full-store and penny coverage remain unverified.
 
 # Previous checkpoint: Phase 4 closeout / Phase 5 started
 

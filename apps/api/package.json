@@ -22,7 +22,9 @@
     "test:bestbuy": "tsx --test tests/bestbuy.test.ts",
     "check:home-depot": "tsx scripts/check-home-depot.ts",
     "test:home-depot": "tsx --test tests/home-depot-pilot.test.ts",
-    "test:discovery": "tsx --test tests/discovery.test.ts tests/discovery-location.test.ts tests/discovery-settings.test.ts"
+    "test:discovery": "tsx --test tests/discovery.test.ts tests/discovery-location.test.ts tests/discovery-settings.test.ts",
+    "check:discovery": "tsx scripts/check-discovery.ts",
+    "check:discovery:scan": "tsx scripts/check-discovery-scan.ts"
   },
   "dependencies": {
     "@flipscout/types": "0.1.0",

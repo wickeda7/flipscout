@@ -26,7 +26,9 @@
     "test:bestbuy": "yarn workspace @flipscout/api test:bestbuy",
     "check:home-depot": "yarn workspace @flipscout/api check:home-depot",
     "test:home-depot": "yarn workspace @flipscout/api test:home-depot",
-    "test:discovery": "yarn workspace @flipscout/api test:discovery"
+    "test:discovery": "yarn workspace @flipscout/api test:discovery",
+    "check:discovery": "yarn workspace @flipscout/api check:discovery",
+    "check:discovery:scan": "yarn workspace @flipscout/api check:discovery:scan"
   },
   "engines": {
     "node": ">=20.9.0"

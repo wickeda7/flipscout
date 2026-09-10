@@ -329,12 +329,13 @@ export interface DiscoveryQuery { retailer?: DiscoveryRetailer; category: Discov
 export interface DiscoveredDeal {
   id: string; title: string; price: number; originalPrice: number | null; savings: number | null;
   kind: Exclude<DiscoveryKind,"all">; promotion: string | null; productUrl: string; imageUrl: string | null;
-  pickupText: string | null; quantity: null;
+  pickupText: string | null; quantity: number | null;
+  pickupStatus: "local" | "ship-to-store" | "other-store" | "unknown";
 }
 export interface DiscoveryResponse {
   source: "serpapi-home-depot"; retailer: "Home Depot"; storeId: "6305"; storeName: string; zip: "33511";
   query: DiscoveryQuery; fetchedAt: string; providerCreatedAt: string | null;
-  coverage?: { completed: number; failed: number; total: number };
+  coverage?: { completed: number; failed: number; total: number; groups?: { category: DiscoveryCategory; status: "success" | "failed"; productsChecked: number; providerCreatedAt: string | null; code: string | null }[] };
   location?: { zip: string; radiusMiles: number; distanceMiles: number; covered: boolean };
   deals: DiscoveredDeal[]; productsChecked: number; skippedProducts: number; hasMore: boolean;
 }

@@ -19,7 +19,7 @@ export function DealDiscovery() {
   const [query,setQuery]=useState<DiscoveryQuery|null>(null);
   const [result,setResult]=useState<DiscoveryResponse|null>(null);
   const [loading,setLoading]=useState(false);
-  const [failed,setFailed]=useState<"setup"|"failed"|"zipError"|"locationError"|null>(null);
+  const [failed,setFailed]=useState<"setup"|"failed"|"zipError"|"locationError"|"cooldown"|null>(null);
   const [attempt,setAttempt]=useState(0);
   const [ready,setReady]=useState(false);
   const [shareState,setShareState]=useState<"copied"|"copyHelp"|null>(null);
@@ -59,7 +59,7 @@ export function DealDiscovery() {
     setLoading(true);setFailed(null);setResult(null);
     flipScoutApi.discoverDeals(query,controller.signal)
       .then(data=>{if(active)setResult(data);})
-      .catch(e=>{if(active)setFailed(e?.code==="SERPAPI_KEY_MISSING"?"setup":e?.code==="ZIP_NOT_FOUND"?"zipError":e?.code==="ZIP_LOOKUP_UNAVAILABLE"?"locationError":"failed");})
+      .catch(e=>{if(active)setFailed(e?.code==="DISCOVERY_COOLDOWN"?"cooldown":e?.code==="SERPAPI_KEY_MISSING"?"setup":e?.code==="ZIP_NOT_FOUND"?"zipError":e?.code==="ZIP_LOOKUP_UNAVAILABLE"?"locationError":"failed");})
       .finally(()=>{clearTimeout(timer);if(active)setLoading(false);});
     return()=>{active=false;controller.abort();clearTimeout(timer);};
   },[query,attempt]);
@@ -105,6 +105,10 @@ export function DealDiscovery() {
       {loading&&<p className="py-12 text-neutral-400">{t("discover.wait")}</p>}
       {failed&&<div role="alert" className="rounded-xl bg-amber-500/10 p-5 text-amber-200"><p>{t(`discover.${failed}`)}</p><button type="button" className={`${button} mt-4`} onClick={()=>setAttempt(n=>n+1)}>{t("inventory.retry")}</button></div>}
       {result&&<>
+        {result.coverage?.groups&&<details className="mb-4 rounded-xl border border-white/10 p-4 text-sm">
+          <summary className="cursor-pointer text-neutral-300">{t("discover.searchDetails")} · {result.coverage.completed}/{result.coverage.total} {t("discover.groupsChecked")}</summary>
+          <ul className="mt-3 space-y-2">{result.coverage.groups.map(group=><li key={group.category} className="flex flex-wrap justify-between gap-2 text-neutral-400"><span>{t(`discover.${group.category}`)}</span><span>{group.status==="success"?`${group.productsChecked} ${t("discover.checked")}`:t("discover.groupFailed")}</span></li>)}</ul>
+        </details>}
         {result.coverage&&result.coverage.failed>0&&<p role="status" className="mb-4 rounded-xl bg-amber-500/10 p-4 text-sm text-amber-200">{t("discover.partial")} ({result.coverage.completed}/{result.coverage.total})</p>}
         {result.location&&<p className="mb-4 rounded-xl border border-white/10 p-4 text-sm text-neutral-300">ZIP {result.location.zip} · {result.location.radiusMiles} {t("discover.miles")} · {result.location.covered?`Home Depot #6305 · ${result.location.distanceMiles} ${t("discover.approx")}`:t("discover.noCoverage")}</p>}
         <div className="mb-4 text-sm text-neutral-400"><p>{t(`discover.${result.query.kind}`)} · {result.deals.length} {t("discover.matches")} · {t("find.page")} {result.query.page}</p><p className="mt-1 text-xs">{t("discover.fetched")}: {new Date(result.fetchedAt).toLocaleString("en-US")}{result.providerCreatedAt?` · ${t("discover.sourceTime")}: ${new Date(result.providerCreatedAt).toLocaleString("en-US")}`:""}</p></div>
@@ -113,7 +117,7 @@ export function DealDiscovery() {
           {deal.imageUrl&&<div className="flex h-44 items-center justify-center bg-white p-4"><img src={deal.imageUrl} alt="" loading="lazy" className="h-full w-full object-contain" /></div>}
           <div className="flex flex-1 flex-col p-5"><span className="text-xs font-semibold uppercase tracking-wide text-emerald-300">{t(`discover.${deal.kind}`)}</span><h2 className="mt-2 font-semibold leading-6">{deal.title}</h2><div className="mt-4 flex items-baseline gap-3"><strong className="text-3xl">{money(deal.price)}</strong>{deal.originalPrice!==null&&<del className="text-sm text-neutral-500">{money(deal.originalPrice)}</del>}</div>
           {deal.savings!==null&&<p className="mt-2 text-sm text-emerald-300">{t("discover.save")} {money(deal.savings)}</p>}
-          <p className="mt-4 text-xs text-neutral-400">Home Depot · {result.storeName} #{result.storeId}</p><p className="mt-2 text-xs text-neutral-400">{deal.pickupText??t("discover.unknown")}</p>
+          <p className="mt-4 text-xs text-neutral-400">Home Depot · {result.storeName} #{result.storeId}</p><p className="mt-2 text-xs text-neutral-400">{deal.pickupStatus==="local"?`${t("discover.localStock")}: ${deal.quantity}`:deal.pickupStatus==="ship-to-store"?t("discover.shipToStore"):deal.pickupStatus==="other-store"?t("discover.otherStore"):deal.pickupText??t("discover.unknown")}</p>
           {deal.kind==="penny"&&<p className="mt-3 text-xs text-amber-200">{t("discover.verifyPenny")}</p>}
           <a href={deal.productUrl} target="_blank" rel="noopener noreferrer" className={`${button} mt-5 text-center`}>{t("discover.open")}</a></div>
         </article>)}</div>

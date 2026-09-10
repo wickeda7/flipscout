@@ -1,3 +1,4 @@
+import { ConnectorError } from "../src/ingestion/http-config.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { HomeDepotDiscovery, normalizeDiscovery, parseDiscoveryQuery } from "../src/retailers/home-depot-discovery.js";
@@ -133,7 +134,7 @@ test("automatic discovery merges five groups, deduplicates and limits concurrenc
   },Date.now,near);
   const r=await service.search({...query,category:"all"});
   assert.equal(calls,5);assert.equal(peak,2);assert.equal(r.deals.length,1);
-  assert.deepEqual(r.coverage,{completed:5,failed:0,total:5});
+  assert.equal(r.coverage?.completed,5);assert.equal(r.coverage?.failed,0);assert.equal(r.coverage?.total,5);assert.equal(r.coverage?.groups?.length,5);
   assert.equal(r.query.category,"all");
   await service.search({...query,category:"all"});assert.equal(calls,5);
 });
@@ -143,7 +144,7 @@ test("automatic discovery reports partial coverage and total failure distinctly"
     const f=fixture();f.search_parameters.q=params.q;return f;
   },Date.now,near);
   const r=await service.search({...query,category:"all"});
-  assert.deepEqual(r.coverage,{completed:4,failed:1,total:5});
+  assert.equal(r.coverage?.completed,4);assert.equal(r.coverage?.failed,1);assert.equal(r.coverage?.groups?.[0].code,"DISCOVERY_PROVIDER_FAILED");assert.doesNotMatch(JSON.stringify(r.coverage),/fixture failure/);
   const failed=new HomeDepotDiscovery(async()=>{throw Error("fixture failure");},Date.now,near);
   await assert.rejects(failed.search({...query,category:"all"}),/fixture failure/);
 });
@@ -156,4 +157,42 @@ test("retailer selection is validated and unsupported retailers never call provi
   const service=new HomeDepotDiscovery(async()=>{calls++;return fixture();},Date.now,async()=>{locations++;return near();});
   await assert.rejects(service.search({...query,retailer:"walmart"}),/RETAILER_NOT_CONNECTED/);
   assert.equal(calls,0);assert.equal(locations,0);
+});
+
+test("provider outages stop queued requests and recover after a bounded cooldown",async()=>{
+  let calls=0,now=0,fail=true;
+  const service=new HomeDepotDiscovery(async params=>{
+    calls++;
+    if(fail)throw new ConnectorError("SERPAPI_HTTP_503");
+    const f=fixture();f.search_parameters.q=params.q;return f;
+  },()=>now,near);
+  await assert.rejects(service.search({...query,category:"all"}),/SERPAPI_HTTP_503/);
+  assert.equal(calls,2); // only the two already-started requests
+  await assert.rejects(service.search({...query,category:"all"}),/DISCOVERY_COOLDOWN/);
+  assert.equal(calls,2);
+  now=60001;fail=false;
+  assert.equal((await service.search({...query,category:"all"})).coverage?.completed,5);
+  assert.equal(calls,7);
+});
+
+test("pickup observations distinguish local, nearby and ship-to-store inventory",()=>{
+  const f=fixture();
+  f.products[0].pickup={store_name:"Northgate",distance:13,quantity:62};
+  let deal=normalizeDiscovery(f,query).deals[0];
+  assert.equal(deal.quantity,null);assert.equal(deal.pickupStatus,"other-store");
+  f.products[0].pickup={store_name:"East Brandon",distance:0,quantity:0};
+  deal=normalizeDiscovery(f,query).deals[0];
+  assert.equal(deal.quantity,0);assert.equal(deal.pickupStatus,"local");
+  f.products[0].pickup={free_ship_to_store:true};
+  deal=normalizeDiscovery(f,query).deals[0];
+  assert.equal(deal.quantity,null);assert.equal(deal.pickupStatus,"ship-to-store");
+  f.products[0].pickup={store_name:"East Brandon",distance:0,quantity:-1};
+  assert.equal(normalizeDiscovery(f,query).deals[0].quantity,null);
+});
+
+test("missing store names cannot establish local inventory",()=>{
+  const f=fixture();delete f.search_information.store_name;
+  f.products[0].pickup={distance:0,quantity:10};
+  const deal=normalizeDiscovery(f,query).deals[0];
+  assert.equal(deal.quantity,null);assert.equal(deal.pickupStatus,"unknown");
 });
