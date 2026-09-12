@@ -4,6 +4,7 @@ import { RequestError } from "../security/request-error.js";
 import type { DiscoveryQuery, DiscoveryResponse } from "@flipscout/types";
 import { ConnectorError } from "../ingestion/http-config.js";
 import { HomeDepotDiscovery } from "./home-depot-discovery.js";
+import { discoverShopping, isShoppingRetailer, shoppingParams } from "./shopping-discovery.js";
 
 export interface CacheClient {
   query(sql:string,values?:any[]):Promise<{rows:any[]}>;
@@ -11,14 +12,20 @@ export interface CacheClient {
 }
 export interface CachePool { connect():Promise<CacheClient>; end?():Promise<void> }
 export function discoveryCacheScope(input:DiscoveryQuery) {
+  if (isShoppingRetailer(input.retailer)) shoppingParams(input);
   // Radius is applied after retrieving the maximum supported area. Deal types filter locally.
   const query:DiscoveryQuery={retailer:input.retailer??"home-depot",zip:input.zip??"33511",
     category:input.category,kind:"all",page:input.page,radiusMiles:25};
-  return {query,key:JSON.stringify(["discovery-v1",query.zip,query.retailer,query.category,query.page])};
+  return {query,key:JSON.stringify([isShoppingRetailer(query.retailer)?"shopping-v1":"discovery-v1",query.zip,query.retailer,query.category,query.page])};
+}
+export function discoverRetailer(query:DiscoveryQuery):Promise<DiscoveryResponse> {
+  if(isShoppingRetailer(query.retailer))return discoverShopping(query);
+  if(query.retailer==="walmart")return discoverWalmart(query);
+  if(!query.retailer||query.retailer==="home-depot")return new HomeDepotDiscovery().search(query);
+  throw new RequestError("Unsupported retailer.",400,"INVALID_DISCOVERY_QUERY");
 }
 export class DatabaseDiscovery {
-  constructor(private readonly pool:CachePool|null,private readonly fetchLive:(q:DiscoveryQuery)=>Promise<DiscoveryResponse> =
-    q=>q.retailer==="walmart"?discoverWalmart(q):new HomeDepotDiscovery().search(q)) {}
+  constructor(private readonly pool:CachePool|null,private readonly fetchLive:(q:DiscoveryQuery)=>Promise<DiscoveryResponse> = discoverRetailer) {}
   async close(){await this.pool?.end?.();}
   async search(input:DiscoveryQuery):Promise<DiscoveryResponse> {
     if(!this.pool)throw new ConnectorError("DISCOVERY_DATABASE_REQUIRED");
@@ -28,6 +35,7 @@ export class DatabaseDiscovery {
     let locked=false,destroy=false;
     const present=(row:any,source:"database"|"provider")=>{
       const result:DiscoveryResponse=structuredClone(row.result);
+      result.offerScope??=result.source==="serpapi-home-depot"?"store-context":"online";
       result.query={...query,radiusMiles:input.radiusMiles??25};
       result.cache={source,fetchedAt:new Date(row.fetched_at).toISOString(),expiresAt:new Date(row.expires_at).toISOString()};
       if(result.location){

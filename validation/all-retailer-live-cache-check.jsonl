@@ -1,0 +1,12 @@
+{"retailer":"home-depot","zip":"33511","status":"partial","source":"serpapi-home-depot","deals":20,"productsChecked":48,"cache":{"source":"database","fetchedAt":"2026-09-10T18:10:43.692Z","expiresAt":"2026-09-11T06:10:43.692Z"},"cacheVerified":true,"durationMs":23}
+{"retailer":"walmart","zip":"33511","status":"success","source":"serpapi-walmart","deals":19,"productsChecked":40,"cache":{"source":"database","fetchedAt":"2026-09-10T18:14:18.050Z","expiresAt":"2026-09-11T06:14:18.050Z"},"cacheVerified":true,"durationMs":1}
+{"retailer":"target","zip":"33511","status":"failed","durationMs":90204,"code":"SERPAPI_HTTP_503"}
+{"retailer":"lowes","zip":"33511","status":"failed","durationMs":90249,"code":"SERPAPI_HTTP_503"}
+{"retailer":"walgreens","zip":"33511","status":"success","source":"serpapi-google-shopping","deals":40,"productsChecked":40,"diagnostics":{"invalid":0,"notDiscounted":0,"wrongMerchant":0,"merchantMatched":40},"cache":{"source":"provider","fetchedAt":"2026-09-10T19:17:14.469Z","expiresAt":"2026-09-11T07:17:14.469Z"},"cacheVerified":true,"durationMs":68226}
+{"retailer":"dollar-general","zip":"33511","status":"failed","durationMs":90201,"code":"SERPAPI_HTTP_503"}
+{"retailer":"cvs","zip":"33511","status":"success","source":"serpapi-google-shopping","deals":19,"productsChecked":21,"diagnostics":{"invalid":0,"notDiscounted":2,"wrongMerchant":0,"merchantMatched":21},"cache":{"source":"provider","fetchedAt":"2026-09-10T19:18:31.001Z","expiresAt":"2026-09-11T07:18:31.001Z"},"cacheVerified":true,"durationMs":76528}
+{"retailer":"costco","zip":"33511","status":"failed","durationMs":90269,"code":"SERPAPI_HTTP_503"}
+{"retailer":"sams-club","zip":"33511","status":"failed","durationMs":90370,"code":"SERPAPI_HTTP_503"}
+{"retailer":"best-buy","zip":"33511","status":"failed","durationMs":90314,"code":"SERPAPI_HTTP_503"}
+{"retailer":"tractor-supply","zip":"33511","status":"failed","durationMs":90199,"code":"SERPAPI_HTTP_503"}
+{"retailer":"office-depot","zip":"33511","status":"failed","durationMs":90200,"code":"SERPAPI_HTTP_503"}

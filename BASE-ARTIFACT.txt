@@ -1,2 +1,3 @@
-Continues flipscout-phase5-partial-retry.zip.
-Current checkpoint: shared 12-hour PostgreSQL search cache and verified Walmart pilot.
+Continues flipscout-phase5-database-cache.zip.
+Current checkpoint: all-retailer discovery connections, labeled online offers, and shared 12-hour PostgreSQL search caching.
+See PHASE5-ALL-RETAILERS.md for verified live outcomes and remaining store-level coverage.

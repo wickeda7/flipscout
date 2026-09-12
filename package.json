@@ -30,7 +30,9 @@
     "check:discovery": "yarn workspace @flipscout/api check:discovery",
     "check:discovery:scan": "yarn workspace @flipscout/api check:discovery:scan",
     "test:discovery:cache": "yarn workspace @flipscout/api test:discovery:cache",
-    "test:walmart": "yarn workspace @flipscout/api test:walmart"
+    "test:walmart": "yarn workspace @flipscout/api test:walmart",
+    "test:shopping": "yarn workspace @flipscout/api test:shopping",
+    "check:retailers": "yarn workspace @flipscout/api check:retailers"
   },
   "engines": {
     "node": ">=20.9.0"

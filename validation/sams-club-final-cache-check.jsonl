@@ -1,0 +1,1 @@
+{"retailer":"sams-club","zip":"33511","status":"success","source":"serpapi-google-shopping","deals":5,"productsChecked":40,"diagnostics":{"invalid":0,"notDiscounted":8,"wrongMerchant":27,"merchantMatched":13},"cache":{"source":"provider","fetchedAt":"2026-09-10T19:22:19.989Z","expiresAt":"2026-09-11T07:22:19.989Z"},"cacheVerified":true,"durationMs":263}

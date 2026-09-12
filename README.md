@@ -1,6 +1,6 @@
-Current checkpoint: [12-hour PostgreSQL search cache and Walmart pilot](PHASE5-DATABASE-CACHE.md). Run yarn db:migrate before using this update.
+Current checkpoint: [all-retailer discovery connections](PHASE5-ALL-RETAILERS.md). All 12 retailer selections are wired to the shared discovery API and 12-hour database cache. Ten use labeled online offers; this is not verified local inventory coverage for every retailer. See the guide for live outcomes and exact Yarn commands.
 
-Latest: [combined scan validation](PHASE5-COMBINED-SCAN.md) — live partial search returned 9 sales from 2 of 5 groups; search details now make coverage visible.
+Earlier checkpoints below are historical.
 
 # Current checkpoint: Phase 5 deal discovery
 

@@ -334,7 +334,10 @@ export interface DiscoveredDeal {
 }
 export interface DiscoveryResponse {
   cache?: { source: "database" | "provider"; fetchedAt: string; expiresAt: string };
-  source: "serpapi-home-depot" | "serpapi-walmart"; retailer: "Home Depot" | "Walmart"; storeId: "6305" | "3463"; storeName: string; zip: "33511";
+  source: "serpapi-home-depot" | "serpapi-walmart" | "serpapi-google-shopping";
+  retailer: typeof discoveryRetailers[number]["name"]; storeId: string | null; storeName: string | null; zip: string;
+  offerScope?: "store-context" | "online";
+  diagnostics?: { merchantMatched: number; wrongMerchant: number; notDiscounted: number; invalid: number };
   query: DiscoveryQuery; fetchedAt: string; providerCreatedAt: string | null;
   coverage?: { completed: number; failed: number; total: number; groups?: { category: DiscoveryCategory; status: "success" | "failed"; productsChecked: number; providerCreatedAt: string | null; code: string | null }[] };
   location?: { zip: string; radiusMiles: number; distanceMiles: number; covered: boolean };

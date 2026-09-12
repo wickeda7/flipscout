@@ -26,7 +26,9 @@
     "check:discovery": "tsx scripts/check-discovery.ts",
     "check:discovery:scan": "tsx scripts/check-discovery-scan.ts",
     "test:discovery:cache": "tsx --test tests/discovery-cache.test.ts",
-    "test:walmart": "tsx --test tests/walmart-discovery.test.ts"
+    "test:walmart": "tsx --test tests/walmart-discovery.test.ts",
+    "test:shopping": "tsx --test tests/shopping-discovery.test.ts",
+    "check:retailers": "tsx scripts/check-retailers.ts"
   },
   "dependencies": {
     "@flipscout/types": "0.1.0",
