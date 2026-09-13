@@ -1,3 +1,5 @@
+Walmart update: see [WALMART-ZIP-FIX.md](WALMART-ZIP-FIX.md). The 33511-only Walmart pilot described below has been replaced by ZIP-based online offers. The recorded results below are historical.
+
 # Phase 5: all-retailer discovery connections
 
 Continues `flipscout-phase5-database-cache.zip`. All 12 requested retailers can now be selected and searched. Home Depot and Walmart retain their existing pilot sources; the other ten use the configured SerpApi key with Google Shopping. These are online offer discovery connections, not twelve verified local inventory APIs. See `validation/all-retailer-live-cache-check.jsonl` for the recorded live outcomes, including failures.

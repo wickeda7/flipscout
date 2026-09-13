@@ -1,28 +1,28 @@
-@import "mapbox-gl/dist/mapbox-gl.css";
-@import "tailwindcss";
+@import 'mapbox-gl/dist/mapbox-gl.css';
+@import 'tailwindcss';
 
 :root {
-  color-scheme: dark;
+	color-scheme: dark;
 }
 
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 html,
 body {
-  min-height: 100%;
-  margin: 0;
+	min-height: 100%;
+	margin: 0;
 }
 
 body {
-  background: #0a0a0a;
-  color: #f5f5f5;
-  font-family: Arial, Helvetica, sans-serif;
+	background: #0a0a0a;
+	color: #f5f5f5;
+	font-family: Arial, Helvetica, sans-serif;
 }
 
 button,
 input,
 select {
-  font: inherit;
+	font: inherit;
 }

@@ -1,65 +1,60 @@
-import type { Pool } from "pg";
+import type { Pool } from 'pg';
 import type {
-  IngestionRunSummary,
-  IngestionSourceStatus,
-  IngestionStatusResponse,
-  RetailerSource,
-} from "@flipscout/types";
-import type { IngestionStatusProvider } from "./ingestion-status-provider.js";
-import { positiveIntegerEnv } from "../security/config.js";
+	IngestionRunSummary,
+	IngestionSourceStatus,
+	IngestionStatusResponse,
+	RetailerSource,
+} from '@flipscout/types';
+import type { IngestionStatusProvider } from './ingestion-status-provider.js';
+import { positiveIntegerEnv } from '../security/config.js';
 
 type RunRow = {
-  id: string;
-  source: RetailerSource;
-  status: "completed" | "failed";
-  fetched_at: string | Date | null;
-  stores_upserted: number;
-  deals_upserted: number;
-  deals_skipped: number;
-  started_at: string | Date;
-  completed_at: string | Date;
-  error_message: string | null;
+	id: string;
+	source: RetailerSource;
+	status: 'completed' | 'failed';
+	fetched_at: string | Date | null;
+	stores_upserted: number;
+	deals_upserted: number;
+	deals_skipped: number;
+	started_at: string | Date;
+	completed_at: string | Date;
+	error_message: string | null;
 };
 
 function iso(value: string | Date | null): string | null {
-  if (value === null) return null;
-  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+	if (value === null) return null;
+	return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
 function mapRun(row: RunRow): IngestionRunSummary {
-  return {
-    id: row.id,
-    source: row.source,
-    status: row.status,
-    fetchedAt: iso(row.fetched_at),
-    storesUpserted: row.stores_upserted,
-    dealsUpserted: row.deals_upserted,
-    dealsSkipped: row.deals_skipped,
-    startedAt: iso(row.started_at)!,
-    completedAt: iso(row.completed_at)!,
-    errorMessage: row.error_message,
-  };
+	return {
+		id: row.id,
+		source: row.source,
+		status: row.status,
+		fetchedAt: iso(row.fetched_at),
+		storesUpserted: row.stores_upserted,
+		dealsUpserted: row.deals_upserted,
+		dealsSkipped: row.deals_skipped,
+		startedAt: iso(row.started_at)!,
+		completedAt: iso(row.completed_at)!,
+		errorMessage: row.error_message,
+	};
 }
 
-export class PostgresIngestionStatusProvider
-  implements IngestionStatusProvider
-{
-  constructor(private readonly pool: Pool) {}
+export class PostgresIngestionStatusProvider implements IngestionStatusProvider {
+	constructor(private readonly pool: Pool) {}
 
-  async getStatus(): Promise<IngestionStatusResponse> {
-    const staleAfterMinutes = positiveIntegerEnv(
-      "INGESTION_STALE_AFTER_MINUTES",
-      180,
-    );
+	async getStatus(): Promise<IngestionStatusResponse> {
+		const staleAfterMinutes = positiveIntegerEnv('INGESTION_STALE_AFTER_MINUTES', 180);
 
-    const sourcesResult = await this.pool.query<{
-      source: RetailerSource;
-      active_deals: number;
-      inactive_deals: number;
-      stores: number;
-      last_seen_at: string | Date | null;
-    }>(
-      `
+		const sourcesResult = await this.pool.query<{
+			source: RetailerSource;
+			active_deals: number;
+			inactive_deals: number;
+			stores: number;
+			last_seen_at: string | Date | null;
+		}>(
+			`
       WITH source_names AS (
         SELECT source FROM deals
         UNION
@@ -92,10 +87,10 @@ export class PostgresIngestionStatusProvider
       LEFT JOIN store_counts s ON s.source = n.source
       ORDER BY n.source
       `,
-    );
+		);
 
-    const latestRuns = await this.pool.query<RunRow>(
-      `
+		const latestRuns = await this.pool.query<RunRow>(
+			`
       SELECT DISTINCT ON (source)
         id::text,
         source,
@@ -110,56 +105,49 @@ export class PostgresIngestionStatusProvider
       FROM ingestion_runs
       ORDER BY source, started_at DESC
       `,
-    );
+		);
 
-    const latestBySource = new Map(
-      latestRuns.rows.map((row) => [row.source, mapRun(row)]),
-    );
+		const latestBySource = new Map(latestRuns.rows.map((row) => [row.source, mapRun(row)]));
 
-    const now = Date.now();
+		const now = Date.now();
 
-    const sources: IngestionSourceStatus[] = sourcesResult.rows.map((row) => {
-      const lastSeenAt = iso(row.last_seen_at);
-      const latestRun = latestBySource.get(row.source) ?? null;
+		const sources: IngestionSourceStatus[] = sourcesResult.rows.map((row) => {
+			const lastSeenAt = iso(row.last_seen_at);
+			const latestRun = latestBySource.get(row.source) ?? null;
 
-      let freshness: IngestionSourceStatus["freshness"] = "unknown";
+			let freshness: IngestionSourceStatus['freshness'] = 'unknown';
 
-      if (latestRun?.status === "failed") {
-        freshness = "stale";
-      } else if (lastSeenAt) {
-        const ageMinutes = (now - Date.parse(lastSeenAt)) / 60_000;
+			if (latestRun?.status === 'failed') {
+				freshness = 'stale';
+			} else if (lastSeenAt) {
+				const ageMinutes = (now - Date.parse(lastSeenAt)) / 60_000;
 
-        freshness =
-          ageMinutes <= staleAfterMinutes
-            ? "fresh"
-            : ageMinutes <= staleAfterMinutes * 2
-              ? "aging"
-              : "stale";
-      }
+				freshness = ageMinutes <= staleAfterMinutes ? 'fresh' : ageMinutes <= staleAfterMinutes * 2 ? 'aging' : 'stale';
+			}
 
-      return {
-        source: row.source,
-        activeDeals: row.active_deals,
-        inactiveDeals: row.inactive_deals,
-        stores: row.stores,
-        lastSeenAt,
-        latestRun,
-        freshness,
-      };
-    });
+			return {
+				source: row.source,
+				activeDeals: row.active_deals,
+				inactiveDeals: row.inactive_deals,
+				stores: row.stores,
+				lastSeenAt,
+				latestRun,
+				freshness,
+			};
+		});
 
-    return {
-      generatedAt: new Date().toISOString(),
-      staleAfterMinutes,
-      sources,
-    };
-  }
+		return {
+			generatedAt: new Date().toISOString(),
+			staleAfterMinutes,
+			sources,
+		};
+	}
 
-  async listRuns(limit = 20): Promise<IngestionRunSummary[]> {
-    const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
+	async listRuns(limit = 20): Promise<IngestionRunSummary[]> {
+		const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
 
-    const result = await this.pool.query<RunRow>(
-      `
+		const result = await this.pool.query<RunRow>(
+			`
       SELECT
         id::text,
         source,
@@ -175,9 +163,9 @@ export class PostgresIngestionStatusProvider
       ORDER BY started_at DESC
       LIMIT $1
       `,
-      [safeLimit],
-    );
+			[safeLimit],
+		);
 
-    return result.rows.map(mapRun);
-  }
+		return result.rows.map(mapRun);
+	}
 }

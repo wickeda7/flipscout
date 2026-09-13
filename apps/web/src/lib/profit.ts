@@ -1,1 +1,1 @@
-export * from "@flipscout/core";
+export * from '@flipscout/core';

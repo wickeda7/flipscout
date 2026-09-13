@@ -1,1 +1,1 @@
-export type { Deal, DealStatus } from "@flipscout/types";
+export type { Deal, DealStatus } from '@flipscout/types';

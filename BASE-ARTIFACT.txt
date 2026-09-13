@@ -1,3 +1,2 @@
-Continues flipscout-phase5-database-cache.zip.
-Current checkpoint: all-retailer discovery connections, labeled online offers, and shared 12-hour PostgreSQL search caching.
-See PHASE5-ALL-RETAILERS.md for verified live outcomes and remaining store-level coverage.
+Continues the image and effect fixes.
+Latest checkpoint: Walmart ZIP-based online offers; see WALMART-ZIP-FIX.md.

@@ -1,18 +1,14 @@
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import { notFound } from "next/navigation";
-import { DealDetailView } from "@/components/deals/DealDetailView";
-import { flipScoutApi } from "@/lib/api";
+import { notFound } from 'next/navigation';
+import { DealDetailView } from '@/components/deals/DealDetailView';
+import { flipScoutApi } from '@/lib/api';
 
-export default async function DealDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const deal = await flipScoutApi.getDeal(id);
+export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
+	const { id } = await params;
+	const deal = await flipScoutApi.getDeal(id);
 
-  if (!deal) notFound();
+	if (!deal) notFound();
 
-  return <DealDetailView deal={deal} />;
+	return <DealDetailView deal={deal} />;
 }

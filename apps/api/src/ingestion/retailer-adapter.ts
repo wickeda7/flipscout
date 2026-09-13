@@ -1,9 +1,6 @@
-import type {
-  RetailerIngestionBatch,
-  RetailerSource,
-} from "@flipscout/types";
+import type { RetailerIngestionBatch, RetailerSource } from '@flipscout/types';
 
 export interface RetailerAdapter {
-  readonly source: RetailerSource;
-  fetchBatch(): Promise<RetailerIngestionBatch>;
+	readonly source: RetailerSource;
+	fetchBatch(): Promise<RetailerIngestionBatch>;
 }

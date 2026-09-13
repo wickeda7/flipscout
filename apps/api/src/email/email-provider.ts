@@ -1,15 +1,15 @@
 export interface VerificationEmailInput {
-  to: string;
-  verificationUrl: string;
+	to: string;
+	verificationUrl: string;
 }
 
 export interface PasswordResetEmailInput {
-  to: string;
-  resetUrl: string;
+	to: string;
+	resetUrl: string;
 }
 
 export interface EmailProvider {
-  readonly name: string;
-  sendVerificationEmail(input: VerificationEmailInput): Promise<void>;
-  sendPasswordResetEmail(input: PasswordResetEmailInput): Promise<void>;
+	readonly name: string;
+	sendVerificationEmail(input: VerificationEmailInput): Promise<void>;
+	sendPasswordResetEmail(input: PasswordResetEmailInput): Promise<void>;
 }

@@ -1,48 +1,48 @@
 {
-  "name": "@flipscout/api",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
-    "typecheck": "tsc --noEmit",
-    "db:bootstrap": "tsx scripts/bootstrap-db.ts",
-    "db:check": "tsx scripts/check-db.ts",
-    "ingest:retailer": "tsx scripts/ingest-retailer.ts",
-    "test:connectors": "tsx --test tests/connectors.test.ts",
-    "ingest:check": "tsx scripts/check-sources.ts",
-    "ingest:due": "tsx scripts/ingest-retailer.ts --due",
-    "test:postgres": "tsx --test tests/postgres.integration.ts",
-    "test:stores": "tsx --test tests/stores.test.ts",
-    "test:stores:api": "tsx tests/stores-api.smoke.ts",
-    "db:migrate": "tsx scripts/migrate-db.ts",
-    "db:seed:demo": "tsx scripts/seed-demo.ts",
-    "test:feed": "tsx --test tests/feed-report.test.ts",
-    "test:bestbuy": "tsx --test tests/bestbuy.test.ts",
-    "check:home-depot": "tsx scripts/check-home-depot.ts",
-    "test:home-depot": "tsx --test tests/home-depot-pilot.test.ts",
-    "test:discovery": "tsx --test tests/discovery.test.ts tests/discovery-location.test.ts tests/discovery-settings.test.ts",
-    "check:discovery": "tsx scripts/check-discovery.ts",
-    "check:discovery:scan": "tsx scripts/check-discovery-scan.ts",
-    "test:discovery:cache": "tsx --test tests/discovery-cache.test.ts",
-    "test:walmart": "tsx --test tests/walmart-discovery.test.ts",
-    "test:shopping": "tsx --test tests/shopping-discovery.test.ts",
-    "check:retailers": "tsx scripts/check-retailers.ts"
-  },
-  "dependencies": {
-    "@flipscout/types": "0.1.0",
-    "@flipscout/core": "0.1.0",
-    "dotenv": "^16.4.7",
-    "pg": "^8.13.1"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.7.2",
-    "@types/pg": "^8.11.10"
-  },
-  "engines": {
-    "node": ">=20.9.0"
-  }
+	"name": "@flipscout/api",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/server.ts",
+		"start": "tsx src/server.ts",
+		"typecheck": "tsc --noEmit",
+		"db:bootstrap": "tsx scripts/bootstrap-db.ts",
+		"db:check": "tsx scripts/check-db.ts",
+		"ingest:retailer": "tsx scripts/ingest-retailer.ts",
+		"test:connectors": "tsx --test tests/connectors.test.ts",
+		"ingest:check": "tsx scripts/check-sources.ts",
+		"ingest:due": "tsx scripts/ingest-retailer.ts --due",
+		"test:postgres": "tsx --test tests/postgres.integration.ts",
+		"test:stores": "tsx --test tests/stores.test.ts",
+		"test:stores:api": "tsx tests/stores-api.smoke.ts",
+		"db:migrate": "tsx scripts/migrate-db.ts",
+		"db:seed:demo": "tsx scripts/seed-demo.ts",
+		"test:feed": "tsx --test tests/feed-report.test.ts",
+		"test:bestbuy": "tsx --test tests/bestbuy.test.ts",
+		"check:home-depot": "tsx scripts/check-home-depot.ts",
+		"test:home-depot": "tsx --test tests/home-depot-pilot.test.ts",
+		"test:discovery": "tsx --test tests/discovery.test.ts tests/discovery-location.test.ts tests/discovery-settings.test.ts",
+		"check:discovery": "tsx scripts/check-discovery.ts",
+		"check:discovery:scan": "tsx scripts/check-discovery-scan.ts",
+		"test:discovery:cache": "tsx --test tests/discovery-cache.test.ts",
+		"test:walmart": "tsx --test tests/walmart-discovery.test.ts",
+		"test:shopping": "tsx --test tests/shopping-discovery.test.ts",
+		"check:retailers": "tsx scripts/check-retailers.ts"
+	},
+	"dependencies": {
+		"@flipscout/types": "0.1.0",
+		"@flipscout/core": "0.1.0",
+		"dotenv": "^16.4.7",
+		"pg": "^8.13.1"
+	},
+	"devDependencies": {
+		"@types/node": "^22.10.0",
+		"tsx": "^4.19.0",
+		"typescript": "^5.7.2",
+		"@types/pg": "^8.11.10"
+	},
+	"engines": {
+		"node": ">=20.9.0"
+	}
 }

@@ -1,229 +1,225 @@
-import type { Deal, DealStatus } from "@flipscout/types";
-import { calculateProfit } from "@flipscout/core";
-import { calculateBuyScore } from "@flipscout/core";
+import type { Deal, DealStatus } from '@flipscout/types';
+import { calculateProfit } from '@flipscout/core';
+import { calculateBuyScore } from '@flipscout/core';
 
 interface RawDeal {
-  id: string;
-  productName: string;
-  brand: string;
-  retailer: string;
-  storeName: string;
-  city: string;
-  state: string;
-  distanceMiles: number;
-  latitude: number;
-  longitude: number;
-  retailPrice: number;
-  clearancePrice: number;
-  resalePrice: number;
-  marketplaceFeePercent: number;
-  shippingCost: number;
-  otherCosts: number;
-  inventory: number;
-  category: string;
-  updatedMinutesAgo: number;
+	id: string;
+	productName: string;
+	brand: string;
+	retailer: string;
+	storeName: string;
+	city: string;
+	state: string;
+	distanceMiles: number;
+	latitude: number;
+	longitude: number;
+	retailPrice: number;
+	clearancePrice: number;
+	resalePrice: number;
+	marketplaceFeePercent: number;
+	shippingCost: number;
+	otherCosts: number;
+	inventory: number;
+	category: string;
+	updatedMinutesAgo: number;
 }
 
 const rawDeals: RawDeal[] = [
-  {
-    id: "deal-001",
-    productName: "20V MAX XR Brushless Impact Driver Kit",
-    brand: "DEWALT",
-    retailer: "Home Depot",
-    storeName: "Lake Mary #0279",
-    city: "Lake Mary",
-    state: "FL",
-    distanceMiles: 5.8,
-    latitude: 28.7855,
-    longitude: -81.3572,
-    retailPrice: 179,
-    clearancePrice: 49,
-    resalePrice: 119,
-    marketplaceFeePercent: 13.25,
-    shippingCost: 10,
-    otherCosts: 0,
-    inventory: 6,
-    category: "Tools",
-    updatedMinutesAgo: 8,
-  },
-  {
-    id: "deal-002",
-    productName: "M18 REDLITHIUM XC 5.0Ah Battery",
-    brand: "Milwaukee",
-    retailer: "Lowe's",
-    storeName: "Sanford #1641",
-    city: "Sanford",
-    state: "FL",
-    distanceMiles: 9.2,
-    latitude: 28.8037,
-    longitude: -81.2738,
-    retailPrice: 149,
-    clearancePrice: 39,
-    resalePrice: 94,
-    marketplaceFeePercent: 13.25,
-    shippingCost: 8,
-    otherCosts: 0,
-    inventory: 4,
-    category: "Tools",
-    updatedMinutesAgo: 12,
-  },
-  {
-    id: "deal-003",
-    productName: '27" QHD Gaming Monitor 165Hz',
-    brand: "LG",
-    retailer: "Walmart",
-    storeName: "Sanford Supercenter #857",
-    city: "Sanford",
-    state: "FL",
-    distanceMiles: 7.4,
-    latitude: 28.7978,
-    longitude: -81.2926,
-    retailPrice: 249,
-    clearancePrice: 119,
-    resalePrice: 199,
-    marketplaceFeePercent: 13.25,
-    shippingCost: 25,
-    otherCosts: 0,
-    inventory: 3,
-    category: "Electronics",
-    updatedMinutesAgo: 21,
-  },
-  {
-    id: "deal-004",
-    productName: "Cordless Stick Vacuum",
-    brand: "Shark",
-    retailer: "Target",
-    storeName: "Lake Mary",
-    city: "Lake Mary",
-    state: "FL",
-    distanceMiles: 3.6,
-    latitude: 28.7581,
-    longitude: -81.3377,
-    retailPrice: 299,
-    clearancePrice: 104.99,
-    resalePrice: 184,
-    marketplaceFeePercent: 13.25,
-    shippingCost: 22,
-    otherCosts: 0,
-    inventory: 2,
-    category: "Home",
-    updatedMinutesAgo: 34,
-  },
-  {
-    id: "deal-005",
-    productName: "12V MAX 2-Tool Combo Kit",
-    brand: "Bosch",
-    retailer: "Lowe's",
-    storeName: "Altamonte Springs #0604",
-    city: "Altamonte Springs",
-    state: "FL",
-    distanceMiles: 12.1,
-    latitude: 28.6694,
-    longitude: -81.3890,
-    retailPrice: 159,
-    clearancePrice: 35,
-    resalePrice: 98,
-    marketplaceFeePercent: 13.25,
-    shippingCost: 8,
-    otherCosts: 0,
-    inventory: 8,
-    category: "Tools",
-    updatedMinutesAgo: 5,
-  },
-  {
-    id: "deal-006",
-    productName: "Smart Wi-Fi Air Fryer Pro",
-    brand: "Cosori",
-    retailer: "Walmart",
-    storeName: "Casselberry Supercenter #943",
-    city: "Casselberry",
-    state: "FL",
-    distanceMiles: 14.7,
-    latitude: 28.6647,
-    longitude: -81.3215,
-    retailPrice: 129,
-    clearancePrice: 49,
-    resalePrice: 79,
-    marketplaceFeePercent: 13.25,
-    shippingCost: 13,
-    otherCosts: 0,
-    inventory: 7,
-    category: "Kitchen",
-    updatedMinutesAgo: 19,
-  },
+	{
+		id: 'deal-001',
+		productName: '20V MAX XR Brushless Impact Driver Kit',
+		brand: 'DEWALT',
+		retailer: 'Home Depot',
+		storeName: 'Lake Mary #0279',
+		city: 'Lake Mary',
+		state: 'FL',
+		distanceMiles: 5.8,
+		latitude: 28.7855,
+		longitude: -81.3572,
+		retailPrice: 179,
+		clearancePrice: 49,
+		resalePrice: 119,
+		marketplaceFeePercent: 13.25,
+		shippingCost: 10,
+		otherCosts: 0,
+		inventory: 6,
+		category: 'Tools',
+		updatedMinutesAgo: 8,
+	},
+	{
+		id: 'deal-002',
+		productName: 'M18 REDLITHIUM XC 5.0Ah Battery',
+		brand: 'Milwaukee',
+		retailer: "Lowe's",
+		storeName: 'Sanford #1641',
+		city: 'Sanford',
+		state: 'FL',
+		distanceMiles: 9.2,
+		latitude: 28.8037,
+		longitude: -81.2738,
+		retailPrice: 149,
+		clearancePrice: 39,
+		resalePrice: 94,
+		marketplaceFeePercent: 13.25,
+		shippingCost: 8,
+		otherCosts: 0,
+		inventory: 4,
+		category: 'Tools',
+		updatedMinutesAgo: 12,
+	},
+	{
+		id: 'deal-003',
+		productName: '27" QHD Gaming Monitor 165Hz',
+		brand: 'LG',
+		retailer: 'Walmart',
+		storeName: 'Sanford Supercenter #857',
+		city: 'Sanford',
+		state: 'FL',
+		distanceMiles: 7.4,
+		latitude: 28.7978,
+		longitude: -81.2926,
+		retailPrice: 249,
+		clearancePrice: 119,
+		resalePrice: 199,
+		marketplaceFeePercent: 13.25,
+		shippingCost: 25,
+		otherCosts: 0,
+		inventory: 3,
+		category: 'Electronics',
+		updatedMinutesAgo: 21,
+	},
+	{
+		id: 'deal-004',
+		productName: 'Cordless Stick Vacuum',
+		brand: 'Shark',
+		retailer: 'Target',
+		storeName: 'Lake Mary',
+		city: 'Lake Mary',
+		state: 'FL',
+		distanceMiles: 3.6,
+		latitude: 28.7581,
+		longitude: -81.3377,
+		retailPrice: 299,
+		clearancePrice: 104.99,
+		resalePrice: 184,
+		marketplaceFeePercent: 13.25,
+		shippingCost: 22,
+		otherCosts: 0,
+		inventory: 2,
+		category: 'Home',
+		updatedMinutesAgo: 34,
+	},
+	{
+		id: 'deal-005',
+		productName: '12V MAX 2-Tool Combo Kit',
+		brand: 'Bosch',
+		retailer: "Lowe's",
+		storeName: 'Altamonte Springs #0604',
+		city: 'Altamonte Springs',
+		state: 'FL',
+		distanceMiles: 12.1,
+		latitude: 28.6694,
+		longitude: -81.389,
+		retailPrice: 159,
+		clearancePrice: 35,
+		resalePrice: 98,
+		marketplaceFeePercent: 13.25,
+		shippingCost: 8,
+		otherCosts: 0,
+		inventory: 8,
+		category: 'Tools',
+		updatedMinutesAgo: 5,
+	},
+	{
+		id: 'deal-006',
+		productName: 'Smart Wi-Fi Air Fryer Pro',
+		brand: 'Cosori',
+		retailer: 'Walmart',
+		storeName: 'Casselberry Supercenter #943',
+		city: 'Casselberry',
+		state: 'FL',
+		distanceMiles: 14.7,
+		latitude: 28.6647,
+		longitude: -81.3215,
+		retailPrice: 129,
+		clearancePrice: 49,
+		resalePrice: 79,
+		marketplaceFeePercent: 13.25,
+		shippingCost: 13,
+		otherCosts: 0,
+		inventory: 7,
+		category: 'Kitchen',
+		updatedMinutesAgo: 19,
+	},
 ];
 
 function toStatus(label: string): DealStatus {
-  if (label === "STRONG BUY") return "strong-buy";
-  if (label === "BUY") return "buy";
-  if (label === "MAYBE") return "maybe";
-  return "skip";
+	if (label === 'STRONG BUY') return 'strong-buy';
+	if (label === 'BUY') return 'buy';
+	if (label === 'MAYBE') return 'maybe';
+	return 'skip';
 }
 
 // Additional synthetic demo items make category filters and pagination usable.
 const demoCatalog: RawDeal[] = [
-  ...rawDeals,
-  ...rawDeals.flatMap((store, storeIndex) => [
-    ["Cordless Drill Kit", "Tools", 49, 119],
-    ["Socket Set", "Tools", 19, 55],
-    ["Bluetooth Speaker", "Electronics", 15, 45],
-    ["Desk Lamp", "Home", 12, 35],
-    ["Coffee Maker", "Kitchen", 24, 69],
-    ["Storage Organizer", "Home", 9, 29],
-    ["USB Charging Hub", "Electronics", 8, 25],
-  ].map(([name, category, price, resale], index) => ({
-    ...store, id: `demo-${storeIndex + 1}-${index + 1}`,
-    productName: `Demo ${name}`, brand: "Demo Brand", category: String(category),
-    retailPrice: Number(resale) * 1.4, clearancePrice: Number(price), resalePrice: Number(resale),
-    inventory: index + 2, updatedMinutesAgo: 0, shippingCost: 5,
-  }))),
+	...rawDeals,
+	...rawDeals.flatMap((store, storeIndex) =>
+		[
+			['Cordless Drill Kit', 'Tools', 49, 119],
+			['Socket Set', 'Tools', 19, 55],
+			['Bluetooth Speaker', 'Electronics', 15, 45],
+			['Desk Lamp', 'Home', 12, 35],
+			['Coffee Maker', 'Kitchen', 24, 69],
+			['Storage Organizer', 'Home', 9, 29],
+			['USB Charging Hub', 'Electronics', 8, 25],
+		].map(([name, category, price, resale], index) => ({
+			...store,
+			id: `demo-${storeIndex + 1}-${index + 1}`,
+			productName: `Demo ${name}`,
+			brand: 'Demo Brand',
+			category: String(category),
+			retailPrice: Number(resale) * 1.4,
+			clearancePrice: Number(price),
+			resalePrice: Number(resale),
+			inventory: index + 2,
+			updatedMinutesAgo: 0,
+			shippingCost: 5,
+		})),
+	),
 ];
 
 export const mockDeals: Deal[] = demoCatalog.map((deal) => {
-  const discountPercent =
-    ((deal.retailPrice - deal.clearancePrice) / deal.retailPrice) * 100;
+	const discountPercent = ((deal.retailPrice - deal.clearancePrice) / deal.retailPrice) * 100;
 
-  const profit = calculateProfit({
-    purchasePrice: deal.clearancePrice,
-    resalePrice: deal.resalePrice,
-    marketplaceFeePercent: deal.marketplaceFeePercent,
-    shippingCost: deal.shippingCost,
-    otherCosts: deal.otherCosts,
-  });
+	const profit = calculateProfit({
+		purchasePrice: deal.clearancePrice,
+		resalePrice: deal.resalePrice,
+		marketplaceFeePercent: deal.marketplaceFeePercent,
+		shippingCost: deal.shippingCost,
+		otherCosts: deal.otherCosts,
+	});
 
-  const buy = calculateBuyScore({
-    roiPercent: profit.roiPercent,
-    netProfit: profit.netProfit,
-    discountPercent,
-    inventory: deal.inventory,
-    distanceMiles: deal.distanceMiles,
-  });
+	const buy = calculateBuyScore({
+		roiPercent: profit.roiPercent,
+		netProfit: profit.netProfit,
+		discountPercent,
+		inventory: deal.inventory,
+		distanceMiles: deal.distanceMiles,
+	});
 
-  return {
-    ...deal,
-    source: "mock",
-    isActive: true,
-    estimatedProfit: profit.netProfit,
-    roi: profit.roiPercent,
-    margin: profit.marginPercent,
-    breakEvenPrice: profit.breakEvenPrice,
-    buyScore: buy.score,
-    status: toStatus(buy.label),
-  };
+	return {
+		...deal,
+		source: 'mock',
+		isActive: true,
+		estimatedProfit: profit.netProfit,
+		roi: profit.roiPercent,
+		margin: profit.marginPercent,
+		breakEvenPrice: profit.breakEvenPrice,
+		buyScore: buy.score,
+		status: toStatus(buy.label),
+	};
 });
 
-export const categories = [
-  "All categories",
-  "Tools",
-  "Electronics",
-  "Home",
-  "Kitchen",
-];
+export const categories = ['All categories', 'Tools', 'Electronics', 'Home', 'Kitchen'];
 
-export const retailers = [
-  "All stores",
-  "Home Depot",
-  "Lowe's",
-  "Walmart",
-  "Target",
-];
+export const retailers = ['All stores', 'Home Depot', "Lowe's", 'Walmart', 'Target'];

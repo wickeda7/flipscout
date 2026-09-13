@@ -1,16 +1,17 @@
-import type { Pool } from "pg";
-import type { StoreSearchResponse, StoreSummary } from "@flipscout/types";
-import { positiveIntegerEnv } from "../security/config.js";
-import type { StoreProvider } from "./store-provider.js";
-import type { ResolvedStoreQuery } from "./query.js";
+import type { Pool } from 'pg';
+import type { StoreSearchResponse, StoreSummary } from '@flipscout/types';
+import { positiveIntegerEnv } from '../security/config.js';
+import type { StoreProvider } from './store-provider.js';
+import type { ResolvedStoreQuery } from './query.js';
 
 export class PostgresStoreProvider implements StoreProvider {
-  constructor(private readonly pool: Pool) {}
-  async search(q: ResolvedStoreQuery): Promise<StoreSearchResponse> {
-    // Escape LIKE metacharacters so text search is literal, as in the mock provider.
-    const pattern = q.q ? "%" + q.q.replace(/[\\%_]/g, "\\$&") + "%" : null;
-    const order = q.sort === "distance" ? '"distanceMiles", "storeName", id' : '"storeName", id';
-    const result = await this.pool.query<{ total: number; stores: StoreSummary[] }>(`
+	constructor(private readonly pool: Pool) {}
+	async search(q: ResolvedStoreQuery): Promise<StoreSearchResponse> {
+		// Escape LIKE metacharacters so text search is literal, as in the mock provider.
+		const pattern = q.q ? '%' + q.q.replace(/[\\%_]/g, '\\$&') + '%' : null;
+		const order = q.sort === 'distance' ? '"distanceMiles", "storeName", id' : '"storeName", id';
+		const result = await this.pool.query<{ total: number; stores: StoreSummary[] }>(
+			`
       WITH catalog AS (
         SELECT s.id::text AS id, s.source, s.retailer, s.store_name AS "storeName", s.city, s.state,
           s.latitude, s.longitude,
@@ -44,8 +45,28 @@ export class PostgresStoreProvider implements StoreProvider {
         ) a ON TRUE
       ) SELECT (SELECT COUNT(*)::int FROM matches) AS total,
         COALESCE((SELECT jsonb_agg(e ORDER BY ${order}) FROM enriched e), '[]'::jsonb) AS stores
-    `, [q.latitude ?? null, q.longitude ?? null, pattern, q.retailer ?? null, q.source ?? null, q.radiusMiles ?? null, q.limit, q.offset, positiveIntegerEnv("INGESTION_STALE_AFTER_MINUTES", 180), q.storeId ?? null]);
-    const { total, stores } = result.rows[0];
-    return { stores, total, limit: q.limit, offset: q.offset, hasMore: q.offset + q.limit <= 10000 && q.offset + q.limit < total, dataProvider: "postgres" };
-  }
+    `,
+			[
+				q.latitude ?? null,
+				q.longitude ?? null,
+				pattern,
+				q.retailer ?? null,
+				q.source ?? null,
+				q.radiusMiles ?? null,
+				q.limit,
+				q.offset,
+				positiveIntegerEnv('INGESTION_STALE_AFTER_MINUTES', 180),
+				q.storeId ?? null,
+			],
+		);
+		const { total, stores } = result.rows[0];
+		return {
+			stores,
+			total,
+			limit: q.limit,
+			offset: q.offset,
+			hasMore: q.offset + q.limit <= 10000 && q.offset + q.limit < total,
+			dataProvider: 'postgres',
+		};
+	}
 }

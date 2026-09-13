@@ -1,3 +1,5 @@
+Latest fix: [Walmart ZIP-based online offers](WALMART-ZIP-FIX.md). The old 33511-only restriction is removed. Earlier pilot notes below are historical.
+
 Current checkpoint: [all-retailer discovery connections](PHASE5-ALL-RETAILERS.md). All 12 retailer selections are wired to the shared discovery API and 12-hour database cache. Ten use labeled online offers; this is not verified local inventory coverage for every retailer. See the guide for live outcomes and exact Yarn commands.
 
 Earlier checkpoints below are historical.

@@ -1,50 +1,43 @@
-import { validateBatch } from "./validation.js";
-import { randomUUID } from "node:crypto";
-import type { Pool, PoolClient } from "pg";
+import { validateBatch } from './validation.js';
+import { randomUUID } from 'node:crypto';
+import type { Pool, PoolClient } from 'pg';
 import type {
-  RetailerIngestionBatch,
-  RetailerIngestionResult,
-  RetailerSourceDeal,
-  RetailerSourceStore,
-} from "@flipscout/types";
-import {
-  calculateBuyScore,
-  calculateProfit,
-  estimateResalePrice,
-} from "@flipscout/core";
+	RetailerIngestionBatch,
+	RetailerIngestionResult,
+	RetailerSourceDeal,
+	RetailerSourceStore,
+} from '@flipscout/types';
+import { calculateBuyScore, calculateProfit, estimateResalePrice } from '@flipscout/core';
 
-export async function ingestRetailerBatch(
-  pool: Pool,
-  batch: RetailerIngestionBatch,
-): Promise<RetailerIngestionResult> {
-  validateBatch(batch);
-  const startedAt = new Date().toISOString();
-  const client = await pool.connect();
+export async function ingestRetailerBatch(pool: Pool, batch: RetailerIngestionBatch): Promise<RetailerIngestionResult> {
+	validateBatch(batch);
+	const startedAt = new Date().toISOString();
+	const client = await pool.connect();
 
-  let storesUpserted = 0;
-  let dealsUpserted = 0;
-  let dealsSkipped = 0;
+	let storesUpserted = 0;
+	let dealsUpserted = 0;
+	let dealsSkipped = 0;
 
-  try {
-    await client.query("BEGIN");
+	try {
+		await client.query('BEGIN');
 
-    const storeIds = new Map<string, string>();
+		const storeIds = new Map<string, string>();
 
-    for (const store of batch.stores) {
-      validateStore(store);
-      const storeId = await upsertStore(client, store);
-      storeIds.set(store.externalStoreId, storeId);
-      storesUpserted += 1;
-    }
+		for (const store of batch.stores) {
+			validateStore(store);
+			const storeId = await upsertStore(client, store);
+			storeIds.set(store.externalStoreId, storeId);
+			storesUpserted += 1;
+		}
 
-    for (const deal of batch.deals) {
-      await upsertDeal(client, storeIds.get(deal.externalStoreId)!, deal);
-      dealsUpserted += 1;
-    }
+		for (const deal of batch.deals) {
+			await upsertDeal(client, storeIds.get(deal.externalStoreId)!, deal);
+			dealsUpserted += 1;
+		}
 
-    if (batch.fullSnapshot) {
-      await client.query(
-        `
+		if (batch.fullSnapshot) {
+			await client.query(
+				`
         UPDATE deals
         SET is_active = FALSE,
             updated_at = NOW()
@@ -55,12 +48,17 @@ export async function ingestRetailerBatch(
             WHERE seen.store_id = deals.store_id::text AND seen.external_id = deals.external_id
           )
         `,
-        [batch.source, JSON.stringify(batch.deals.map(d => ({ store_id: storeIds.get(d.externalStoreId), external_id: d.externalDealId })))],
-      );
-    }
+				[
+					batch.source,
+					JSON.stringify(
+						batch.deals.map((d) => ({ store_id: storeIds.get(d.externalStoreId), external_id: d.externalDealId })),
+					),
+				],
+			);
+		}
 
-    await client.query(
-      `
+		await client.query(
+			`
       INSERT INTO ingestion_runs (
         id,
         source,
@@ -74,28 +72,20 @@ export async function ingestRetailerBatch(
       )
       VALUES ($1, $2, 'completed', $3, $4, $5, $6, $7, NOW())
       `,
-      [
-        randomUUID(),
-        batch.source,
-        batch.fetchedAt,
-        storesUpserted,
-        dealsUpserted,
-        dealsSkipped,
-        startedAt,
-      ],
-    );
+			[randomUUID(), batch.source, batch.fetchedAt, storesUpserted, dealsUpserted, dealsSkipped, startedAt],
+		);
 
-    await client.query("COMMIT");
-  } catch (error) {
-    try {
-      await client.query("ROLLBACK");
-    } catch {
-      // Preserve original ingestion error.
-    }
+		await client.query('COMMIT');
+	} catch (error) {
+		try {
+			await client.query('ROLLBACK');
+		} catch {
+			// Preserve original ingestion error.
+		}
 
-    await pool
-      .query(
-        `
+		await pool
+			.query(
+				`
         INSERT INTO ingestion_runs (
           id,
           source,
@@ -110,42 +100,39 @@ export async function ingestRetailerBatch(
         )
         VALUES ($1, $2, 'failed', $3, $4, $5, $6, $7, NOW(), $8)
         `,
-        [
-          randomUUID(),
-          batch.source,
-          batch.fetchedAt,
-          storesUpserted,
-          dealsUpserted,
-          dealsSkipped,
-          startedAt,
-          "PERSISTENCE_FAILED",
-        ],
-      )
-      .catch(() => undefined);
+				[
+					randomUUID(),
+					batch.source,
+					batch.fetchedAt,
+					storesUpserted,
+					dealsUpserted,
+					dealsSkipped,
+					startedAt,
+					'PERSISTENCE_FAILED',
+				],
+			)
+			.catch(() => undefined);
 
-    throw error;
-  } finally {
-    client.release();
-  }
+		throw error;
+	} finally {
+		client.release();
+	}
 
-  return {
-    source: batch.source,
-    storesUpserted,
-    dealsUpserted,
-    dealsSkipped,
-    startedAt,
-    completedAt: new Date().toISOString(),
-  };
+	return {
+		source: batch.source,
+		storesUpserted,
+		dealsUpserted,
+		dealsSkipped,
+		startedAt,
+		completedAt: new Date().toISOString(),
+	};
 }
 
-async function upsertStore(
-  client: PoolClient,
-  store: RetailerSourceStore,
-): Promise<string> {
-  const id = randomUUID();
+async function upsertStore(client: PoolClient, store: RetailerSourceStore): Promise<string> {
+	const id = randomUUID();
 
-  const result = await client.query<{ id: string }>(
-    `
+	const result = await client.query<{ id: string }>(
+		`
     INSERT INTO stores (
       id,
       source,
@@ -174,61 +161,55 @@ async function upsertStore(
       updated_at = NOW()
     RETURNING id::text
     `,
-    [
-      id,
-      store.source,
-      store.externalStoreId,
-      store.retailer,
-      store.storeName,
-      store.city,
-      store.state,
-      store.latitude,
-      store.longitude,
-    ],
-  );
+		[
+			id,
+			store.source,
+			store.externalStoreId,
+			store.retailer,
+			store.storeName,
+			store.city,
+			store.state,
+			store.latitude,
+			store.longitude,
+		],
+	);
 
-  return result.rows[0].id;
+	return result.rows[0].id;
 }
 
-async function upsertDeal(
-  client: PoolClient,
-  storeId: string,
-  deal: RetailerSourceDeal,
-): Promise<void> {
-  const resalePrice = estimateResalePrice({
-    retailPrice: deal.retailPrice,
-    clearancePrice: deal.clearancePrice,
-    suppliedResalePrice: deal.resalePrice,
-  });
+async function upsertDeal(client: PoolClient, storeId: string, deal: RetailerSourceDeal): Promise<void> {
+	const resalePrice = estimateResalePrice({
+		retailPrice: deal.retailPrice,
+		clearancePrice: deal.clearancePrice,
+		suppliedResalePrice: deal.resalePrice,
+	});
 
-  const feePercent = deal.marketplaceFeePercent ?? 13.25;
-  const shippingCost = deal.shippingCost ?? 10;
-  const otherCosts = deal.otherCosts ?? 0;
+	const feePercent = deal.marketplaceFeePercent ?? 13.25;
+	const shippingCost = deal.shippingCost ?? 10;
+	const otherCosts = deal.otherCosts ?? 0;
 
-  const profit = calculateProfit({
-    purchasePrice: deal.clearancePrice,
-    resalePrice,
-    marketplaceFeePercent: feePercent,
-    marketplaceFeeFlat: 0.3,
-    shippingCost,
-    otherCosts,
-  });
+	const profit = calculateProfit({
+		purchasePrice: deal.clearancePrice,
+		resalePrice,
+		marketplaceFeePercent: feePercent,
+		marketplaceFeeFlat: 0.3,
+		shippingCost,
+		otherCosts,
+	});
 
-  const discountPercent =
-    deal.retailPrice > 0
-      ? ((deal.retailPrice - deal.clearancePrice) / deal.retailPrice) * 100
-      : 0;
+	const discountPercent =
+		deal.retailPrice > 0 ? ((deal.retailPrice - deal.clearancePrice) / deal.retailPrice) * 100 : 0;
 
-  const score = calculateBuyScore({
-    roiPercent: profit.roiPercent,
-    netProfit: profit.netProfit,
-    discountPercent,
-    inventory: deal.inventory,
-    distanceMiles: 0,
-  });
+	const score = calculateBuyScore({
+		roiPercent: profit.roiPercent,
+		netProfit: profit.netProfit,
+		discountPercent,
+		inventory: deal.inventory,
+		distanceMiles: 0,
+	});
 
-  await client.query(
-    `
+	await client.query(
+		`
     INSERT INTO deals (
       id,
       source,
@@ -289,58 +270,58 @@ async function upsertDeal(
       is_active = TRUE,
       updated_at = NOW()
     `,
-    [
-      randomUUID(),
-      deal.source,
-      deal.externalDealId,
-      storeId,
-      deal.productName,
-      deal.brand,
-      deal.category,
-      deal.retailPrice,
-      deal.clearancePrice,
-      resalePrice,
-      feePercent,
-      shippingCost,
-      otherCosts,
-      deal.inventory,
-      profit.netProfit,
-      profit.roiPercent,
-      profit.marginPercent,
-      profit.breakEvenPrice,
-      score.score,
-      score.label === "STRONG BUY"
-        ? "strong-buy"
-        : score.label === "BUY"
-          ? "buy"
-          : score.label === "MAYBE"
-            ? "maybe"
-            : "skip",
-      deal.sourceUpdatedAt,
-      deal.sourceUrl ?? null,
-      deal.sku ?? null,
-      deal.upc ?? null,
-    ],
-  );
+		[
+			randomUUID(),
+			deal.source,
+			deal.externalDealId,
+			storeId,
+			deal.productName,
+			deal.brand,
+			deal.category,
+			deal.retailPrice,
+			deal.clearancePrice,
+			resalePrice,
+			feePercent,
+			shippingCost,
+			otherCosts,
+			deal.inventory,
+			profit.netProfit,
+			profit.roiPercent,
+			profit.marginPercent,
+			profit.breakEvenPrice,
+			score.score,
+			score.label === 'STRONG BUY'
+				? 'strong-buy'
+				: score.label === 'BUY'
+					? 'buy'
+					: score.label === 'MAYBE'
+						? 'maybe'
+						: 'skip',
+			deal.sourceUpdatedAt,
+			deal.sourceUrl ?? null,
+			deal.sku ?? null,
+			deal.upc ?? null,
+		],
+	);
 }
 
 function validateStore(store: RetailerSourceStore) {
-  if (!store.externalStoreId.trim()) {
-    throw new Error("externalStoreId is required.");
-  }
+	if (!store.externalStoreId.trim()) {
+		throw new Error('externalStoreId is required.');
+	}
 
-  if (!store.storeName.trim()) {
-    throw new Error("storeName is required.");
-  }
+	if (!store.storeName.trim()) {
+		throw new Error('storeName is required.');
+	}
 
-  if (
-    !Number.isFinite(store.latitude) ||
-    store.latitude < -90 ||
-    store.latitude > 90 ||
-    !Number.isFinite(store.longitude) ||
-    store.longitude < -180 ||
-    store.longitude > 180
-  ) {
-    throw new Error("Store coordinates are invalid.");
-  }
+	if (
+		!Number.isFinite(store.latitude) ||
+		store.latitude < -90 ||
+		store.latitude > 90 ||
+		!Number.isFinite(store.longitude) ||
+		store.longitude < -180 ||
+		store.longitude > 180
+	) {
+		throw new Error('Store coordinates are invalid.');
+	}
 }
