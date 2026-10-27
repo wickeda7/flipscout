@@ -13,7 +13,6 @@ import { shoppingLocation } from './shopping-location.js';
 // Merchant names are exact matches after typography/case normalization. A retailer
 // name in the query or product title is never evidence of who sells the offer.
 export const shoppingMerchants = {
-	walmart: { query: 'Walmart', names: ['Walmart', 'Walmart.com'], domain: 'walmart.com' },
 	lowes: { query: "Lowe's", names: ["Lowe's", 'Lowes', 'Lowes.com'], domain: 'lowes.com' },
 	target: { query: 'Target', names: ['Target', 'Target.com'], domain: 'target.com' },
 	'dollar-general': {

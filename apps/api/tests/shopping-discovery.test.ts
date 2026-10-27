@@ -36,7 +36,7 @@ const fixture = (q = query): any => ({
 test('every requested retailer has a discovery route and online merchants normalize independently', () => {
 	assert.equal(discoveryRetailers.length, 12);
 	for (const r of discoveryRetailers) {
-		if (r.id === 'home-depot') continue;
+		if (r.id === 'home-depot' || r.id === 'walmart') continue;
 		assert.ok(Object.hasOwn(shoppingMerchants, r.id));
 		const q = { ...query, retailer: r.id },
 			f = fixture(q);

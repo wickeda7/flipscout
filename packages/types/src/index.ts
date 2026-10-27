@@ -338,6 +338,14 @@ export interface DiscoveryQuery {
 	radiusMiles?: number;
 }
 export interface DiscoveredDeal {
+	verification?: {
+		itemId: string;
+		seller: string;
+		variants: string[];
+		checkedAt: string;
+		pickup: boolean | null;
+		shipping: boolean | null;
+	};
 	id: string;
 	title: string;
 	price: number;

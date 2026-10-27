@@ -202,7 +202,7 @@ function DiscoveryForm() {
 							{discoveryRetailers.map((r) => (
 								<option key={r.id} value={r.id}>
 									{r.name}
-									{r.id === 'home-depot' ? '' : ` — ${t('discover.onlineOffers')}`}
+									{r.id === 'home-depot' || r.id === 'walmart' ? '' : ` — ${t('discover.onlineOffers')}`}
 								</option>
 							))}
 						</select>
@@ -223,7 +223,7 @@ function DiscoveryForm() {
 					<label className='text-sm'>
 						{t('discover.radius')}
 						<select
-							disabled={retailer !== 'home-depot'}
+							disabled={retailer !== 'home-depot' && retailer !== 'walmart'}
 							value={radiusMiles}
 							onChange={(e) => setRadiusMiles(Number(e.target.value))}
 							className='mt-2 w-full rounded-xl border border-white/20 bg-neutral-950 p-3'>
@@ -317,7 +317,7 @@ function DiscoveryForm() {
 					)}
 					{result && (
 						<>
-							{result.source !== 'serpapi-home-depot' && (
+							{result.offerScope === 'online' && (
 								<p className='mb-4 rounded-xl border border-blue-400/20 bg-blue-400/5 p-4 text-sm text-blue-200'>
 									{result.retailer} · {t('discover.onlineOffers')} · ZIP {result.query.zip}
 								</p>
@@ -369,7 +369,7 @@ function DiscoveryForm() {
 								<p className='mb-4 rounded-xl border border-white/10 p-4 text-sm text-neutral-300'>
 									ZIP {result.location.zip} · {result.location.radiusMiles} {t('discover.miles')} ·{' '}
 									{result.location.covered
-										? `Home Depot #6305 · ${result.location.distanceMiles} ${t('discover.approx')}`
+										? `${result.retailer} #${result.storeId} · ${result.location.distanceMiles.toFixed(1)} ${t('discover.approx')}`
 										: t('discover.noCoverage')}
 								</p>
 							)}
@@ -435,6 +435,31 @@ function DiscoveryForm() {
 															? t('discover.otherStore')
 															: (deal.pickupText ?? t('discover.unknown'))}
 											</p>
+											{deal.verification && (
+												<p className='mt-3 text-xs text-neutral-400'>
+													{t('discover.verified')} {new Date(deal.verification.checkedAt).toLocaleString()} ·{' '}
+													{deal.verification.seller}
+													{deal.verification.variants.length > 0 && <> · {deal.verification.variants.join(', ')}</>}
+													<br />
+													{t('discover.pickup')}:{' '}
+													{t(
+														deal.verification.pickup === null
+															? 'discover.unknown'
+															: deal.verification.pickup
+																? 'discover.available'
+																: 'discover.unavailable',
+													)}
+													{' · '}
+													{t('discover.shipping')}:{' '}
+													{t(
+														deal.verification.shipping === null
+															? 'discover.unknown'
+															: deal.verification.shipping
+																? 'discover.available'
+																: 'discover.unavailable',
+													)}
+												</p>
+											)}
 											{deal.kind === 'penny' && (
 												<p className='mt-3 text-xs text-amber-200'>{t('discover.verifyPenny')}</p>
 											)}

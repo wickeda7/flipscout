@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { discoverWalmart } from '../src/retailers/walmart-discovery.js';
-import { normalizeShopping, shoppingParams } from '../src/retailers/shopping-discovery.js';
+import { discoverWalmart, verifiedWalmartDeal } from '../src/retailers/walmart-discovery.js';
 import { discoveryCacheScope } from '../src/retailers/discovery-cache.js';
 import type { DiscoveryQuery } from '@flipscout/types';
 const query: DiscoveryQuery = {
@@ -9,84 +8,119 @@ const query: DiscoveryQuery = {
 	category: 'all',
 	kind: 'all',
 	page: 1,
-	zip: '10001',
+	zip: '33511',
 	radiusMiles: 25,
 };
-const fixture = (params: Record<string, string> = shoppingParams(query)) => ({
+const candidate = {
+	us_item_id: '123',
+	seller_name: 'Walmart.com',
+	seller_id: 'W',
+	primary_offer: { offer_price: 5, was_price: 10 },
+};
+const detail = (): any => ({
 	search_metadata: { status: 'Success' },
-	search_parameters: { ...params, location_requested: params.location },
-	shopping_results: [
-		{
-			product_id: '123456789',
-			title: 'Test',
-			source: 'Walmart',
-			price: '$5.00',
-			extracted_price: 5,
-			old_price: '$10.00',
-			extracted_old_price: 10,
-			link: 'https://www.walmart.com/ip/123456789',
-		},
-	],
+	search_parameters: { engine: 'walmart_product', product_id: '123', store_id: '2387' },
+	search_information: { location: { store_id: '2387' } },
+	product_result: {
+		us_item_id: '123',
+		title: 'Exact variant',
+		seller_name: 'Walmart.com',
+		seller_id: 'W',
+		price_map: { price: 6, was_price: { price: 10 }, currency: 'USD' },
+		variants: ['color-red'],
+		pickup_option: { available: true },
+	},
 });
-test('Walmart uses each resolved ZIP instead of a fixed store', async () => {
-	for (const [zip, state] of [
-		['33511', 'Florida'],
-		['10001', 'New York'],
-		['90210', 'California'],
-		['02108', 'Massachusetts'],
+const resolve = async () => ({
+	id: '2387',
+	zip: '33511',
+	address: 'Test store',
+	latitude: 0,
+	longitude: 0,
+	distanceMiles: 1,
+});
+test('display verified price, exact item link and fulfillment without fabricated shelf quantity', () => {
+	const d = verifiedWalmartDeal(detail(), candidate, '2387')!;
+	assert.equal(d.price, 6);
+	assert.equal(d.productUrl, 'https://www.walmart.com/ip/123');
+	assert.equal(d.quantity, null);
+	assert.equal(d.verification?.pickup, true);
+});
+test('reject wrong item, seller, currency and missing markdown; reject wrong store', () => {
+	for (const mutate of [
+		(p: any) => (p.us_item_id = '456'),
+		(p: any) => (p.seller_id = 'OTHER'),
+		(p: any) => (p.price_map.currency = 'CAD'),
+		(p: any) => (p.price_map.was_price = null),
 	]) {
-		let requests = 0;
-		const result = await discoverWalmart(
-			{ ...query, zip },
-			async (params) => {
-				requests++;
-				assert.equal(params.location, `${zip},${state},United States`);
-				assert.equal(params.engine, 'google_shopping');
-				assert.equal(params.store_id, undefined);
-				return fixture(params);
-			},
-			async (requested) => {
-				assert.equal(requested, zip);
-				return `${zip},${state},United States`;
-			},
-		);
-		assert.equal(requests, 1);
-		assert.equal(result.zip, zip);
-		assert.equal(result.query.zip, zip);
-		assert.equal(result.deals.length, 1);
-		assert.equal(result.deals[0].savings, 5);
-		assert.equal(result.storeId, null);
-		assert.equal(result.offerScope, 'online');
-		assert.equal(result.deals[0].quantity, null);
+		const raw = detail();
+		mutate(raw.product_result);
+		assert.equal(verifiedWalmartDeal(raw, candidate, '2387'), null);
 	}
+	assert.throws(() => verifiedWalmartDeal(detail(), candidate, '3463'), /CONTEXT/);
 });
-test('Walmart rejects mismatched ZIP context and other merchants', () => {
-	const f = fixture();
-	f.search_parameters.location_requested = '33511,United States';
-	assert.throws(() => normalizeShopping(f, query), /CONTEXT_MISMATCH/);
-	const other = fixture();
-	other.shopping_results[0].source = 'eBay - Walmart';
-	assert.equal(normalizeShopping(other, query).deals.length, 0);
-});
-test('Walmart cache isolates ZIPs and avoids old Brandon pilot entries', () => {
-	const first = discoveryCacheScope(query).key;
-	assert.notEqual(first, discoveryCacheScope({ ...query, zip: '33511' }).key);
-	assert.equal(first, discoveryCacheScope({ ...query, kind: 'penny', radiusMiles: 5 }).key);
-	const brandon = discoveryCacheScope({ ...query, zip: '33511' }).key;
-	assert.notEqual(brandon, JSON.stringify(['discovery-v1', '33511', 'walmart', 'all', 1]));
-	assert.equal(JSON.parse(brandon)[0], 'shopping-v1');
-});
-test('invalid ZIPs fail before spending a search and lookup failures propagate', async () => {
-	let calls = 0;
-	const request = async () => {
-		calls++;
-		return fixture();
-	};
-	await assert.rejects(discoverWalmart({ ...query, zip: '1234' }, request));
-	await assert.rejects(
-		discoverWalmart(query, request, async () => {
-			throw Error('ZIP lookup failed');
-		}),
+test('search then verify with Walmart engines; no Google fallback', async () => {
+	const calls: string[] = [];
+	const r = await discoverWalmart(
+		query,
+		async (p) => {
+			calls.push(p.engine);
+			if (p.engine === 'walmart_product') return detail();
+			return {
+				search_metadata: { status: 'Success' },
+				search_parameters: p,
+				search_information: { location: { store_id: '2387' } },
+				organic_results: [candidate],
+			};
+		},
+		resolve,
 	);
-	assert.equal(calls, 0);
+	assert.deepEqual(calls, ['walmart', 'walmart_product']);
+	assert.equal(r.deals.length, 1);
+	assert.equal(r.source, 'serpapi-walmart');
+});
+test('no provider calls outside radius and failed verification is not empty success', async () => {
+	await assert.rejects(
+		discoverWalmart(
+			query,
+			async (p) => {
+				if (p.engine === 'walmart_product') throw Error('offline');
+				return {
+					search_metadata: { status: 'Success' },
+					search_parameters: p,
+					search_information: { location: { store_id: '2387' } },
+					organic_results: [candidate],
+				};
+			},
+			resolve,
+		),
+		/VERIFICATION_UNAVAILABLE/,
+	);
+	const r = await discoverWalmart(
+		query,
+		async () => {
+			throw Error('must not call');
+		},
+		async () => ({ ...(await resolve()), distanceMiles: 30 }),
+	);
+	assert.equal(r.location?.covered, false);
+});
+test('cache isolates old Google data and ZIPs while sharing filters', () => {
+	assert.equal(JSON.parse(discoveryCacheScope(query).key)[0], 'walmart-verified-v1');
+	assert.notEqual(discoveryCacheScope(query).key, discoveryCacheScope({ ...query, zip: '10001' }).key);
+	assert.equal(discoveryCacheScope(query).key, discoveryCacheScope({ ...query, kind: 'penny', radiusMiles: 5 }).key);
+});
+
+test('catalog resolves multiple US regions to nearby listed stores', async () => {
+	const { nearestWalmartStore } = await import('../src/retailers/walmart-discovery.js');
+	for (const origin of [
+		{ latitude: 27.9056, longitude: -82.2881 },
+		{ latitude: 40.75, longitude: -73.99 },
+		{ latitude: 34.09, longitude: -118.4 },
+	]) {
+		const store = nearestWalmartStore(origin);
+		assert.ok(store.distanceMiles < 25);
+		assert.match(store.id, /^\d+$/);
+		assert.ok(!store.address.endsWith(', MX'));
+	}
 });
