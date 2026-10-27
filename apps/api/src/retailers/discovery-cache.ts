@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 import { RequestError } from '../security/request-error.js';
 import type { DiscoveryQuery, DiscoveryResponse } from '@flipscout/types';
 import { ConnectorError } from '../ingestion/http-config.js';
-import { HomeDepotDiscovery } from './home-depot-discovery.js';
+import { discoverVerifiedHomeDepot } from './home-depot-verified.js';
 import { discoverShopping, isShoppingRetailer, shoppingParams } from './shopping-discovery.js';
 
 export interface CacheClient {
@@ -32,7 +32,7 @@ export function discoveryCacheScope(input: DiscoveryQuery) {
 				? 'walmart-verified-v1'
 				: isShoppingRetailer(query.retailer)
 					? 'shopping-v1'
-					: 'discovery-v1',
+					: 'home-depot-verified-v1',
 			query.zip,
 			query.retailer,
 			query.category,
@@ -43,7 +43,7 @@ export function discoveryCacheScope(input: DiscoveryQuery) {
 export function discoverRetailer(query: DiscoveryQuery): Promise<DiscoveryResponse> {
 	if (query.retailer === 'walmart') return discoverWalmart(query);
 	if (isShoppingRetailer(query.retailer)) return discoverShopping(query);
-	if (!query.retailer || query.retailer === 'home-depot') return new HomeDepotDiscovery().search(query);
+	if (!query.retailer || query.retailer === 'home-depot') return discoverVerifiedHomeDepot(query);
 	throw new RequestError('Unsupported retailer.', 400, 'INVALID_DISCOVERY_QUERY');
 }
 export class DatabaseDiscovery {

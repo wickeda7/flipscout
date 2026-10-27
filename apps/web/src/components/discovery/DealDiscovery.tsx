@@ -365,6 +365,11 @@ function DiscoveryForm() {
 									</p>
 								</div>
 							)}
+							{result.verificationCoverage && result.verificationCoverage.failed > 0 && (
+								<p role='status' className='mb-4 text-sm text-amber-200'>
+									{t('discover.partial')} ({result.verificationCoverage.completed}/{result.verificationCoverage.total})
+								</p>
+							)}
 							{result.location && (
 								<p className='mb-4 rounded-xl border border-white/10 p-4 text-sm text-neutral-300'>
 									ZIP {result.location.zip} · {result.location.radiusMiles} {t('discover.miles')} ·{' '}

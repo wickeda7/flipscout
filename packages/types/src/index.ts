@@ -360,6 +360,7 @@ export interface DiscoveredDeal {
 	pickupStatus: 'local' | 'ship-to-store' | 'other-store' | 'unknown';
 }
 export interface DiscoveryResponse {
+	verificationCoverage?: { completed: number; failed: number; total: number };
 	cache?: { source: 'database' | 'provider'; fetchedAt: string; expiresAt: string };
 	source: 'serpapi-home-depot' | 'serpapi-walmart' | 'serpapi-google-shopping';
 	retailer: (typeof discoveryRetailers)[number]['name'];
