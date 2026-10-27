@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import {
 	BarChart3,
@@ -10,6 +11,8 @@ import {
 	LogIn,
 	LogOut,
 	MapPinned,
+	Menu,
+	X,
 	Radar,
 	Tags,
 	UserRound,
@@ -18,6 +21,59 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { useAuth } from '@/components/auth/AuthProvider';
 
 export function Sidebar() {
+	const dialog = useRef<HTMLDialogElement>(null);
+	useEffect(() => {
+		const desktop = window.matchMedia('(min-width: 1024px)');
+		const closeOnDesktop = () => {
+			if (desktop.matches) dialog.current?.close();
+		};
+		desktop.addEventListener('change', closeOnDesktop);
+		return () => desktop.removeEventListener('change', closeOnDesktop);
+	}, []);
+	const { locale } = useI18n();
+	const label = locale === 'vi' ? 'Menu điều hướng' : 'Navigation menu';
+	return (
+		<>
+			<SidebarContent />
+			<button
+				type='button'
+				aria-label={label}
+				aria-haspopup='dialog'
+				onClick={() => dialog.current?.showModal()}
+				className='fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-40 flex min-h-12 items-center gap-2 rounded-full border border-white/20 bg-neutral-900 px-4 text-sm font-semibold text-white shadow-xl lg:hidden'>
+				<Menu size={20} aria-hidden='true' /> Menu
+			</button>
+			<dialog
+				ref={dialog}
+				aria-label={label}
+				onClick={(event) => {
+					if (event.target === event.currentTarget) dialog.current?.close();
+				}}
+				className='fixed inset-y-0 left-0 right-auto m-0 h-dvh max-h-none w-80 max-w-[90vw] border-0 bg-neutral-950 p-0 text-white backdrop:bg-black/60 lg:hidden'>
+				<div
+					className='flex min-h-full flex-col'
+					onClick={(event) => {
+						if ((event.target as HTMLElement).closest('a')) dialog.current?.close();
+					}}>
+					<div className='flex items-center justify-between border-b border-white/10 px-5 py-3'>
+						<span className='font-semibold'>{label}</span>
+						<button
+							type='button'
+							autoFocus
+							onClick={() => dialog.current?.close()}
+							aria-label={locale === 'vi' ? 'Đóng menu' : 'Close menu'}
+							className='flex h-11 w-11 items-center justify-center rounded-lg hover:bg-white/10'>
+							<X size={22} />
+						</button>
+					</div>
+					<SidebarContent mobile />
+				</div>
+			</dialog>
+		</>
+	);
+}
+
+function SidebarContent({ mobile = false }: { mobile?: boolean }) {
 	const { locale, setLocale, t } = useI18n();
 	const { user, loading: authLoading, logout } = useAuth();
 	const pathname = usePathname();
@@ -30,7 +86,12 @@ export function Sidebar() {
 	];
 
 	return (
-		<aside className='sticky top-0 hidden h-screen w-64 shrink-0 border-r border-white/10 bg-neutral-950 p-5 lg:flex lg:flex-col'>
+		<aside
+			className={
+				mobile
+					? 'flex flex-1 flex-col gap-6 bg-neutral-950 p-5 pb-24'
+					: 'sticky top-0 hidden h-screen w-64 shrink-0 border-r border-white/10 bg-neutral-950 p-5 lg:flex lg:flex-col'
+			}>
 			<Link href='/' className='mb-10 flex items-center gap-3 px-2'>
 				<div className='rounded-xl bg-white p-2 text-black'>
 					<Radar size={22} />
