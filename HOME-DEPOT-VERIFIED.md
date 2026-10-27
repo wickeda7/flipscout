@@ -31,3 +31,9 @@ yarn check:retailers home-depot 33511
 Provider documentation: https://serpapi.com/home-depot-product
 
 Validation for this update uses mocked provider responses and regression tests; no new live Home Depot request is claimed.
+
+## Image quality fix
+
+Search results now select the largest supplied rendition of the primary thumbnail. Verified products prefer the largest supplied primary product image, falling back to the search image when unavailable. URLs are selected from provider data, not synthesized. Existing cached results retain their old image URL until the 12-hour entry expires; no paid refresh is forced by this update. Restart the API after replacing the source files. The web image optimizer remains enabled.
+
+Validation: 37 Home Depot/discovery tests passed and API typecheck passed. No new live provider calls were needed for this change.

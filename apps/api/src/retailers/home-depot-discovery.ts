@@ -1,3 +1,4 @@
+import { homeDepotImage } from './home-depot-image.js';
 import { discoveryRetailers } from '@flipscout/types';
 import { locateZip, distanceMiles } from './discovery-location.js';
 import type { DiscoveryQuery, DiscoveryResponse, DiscoveredDeal } from '@flipscout/types';
@@ -50,18 +51,6 @@ const obj = (v: unknown): v is Record<string, any> => v !== null && typeof v ===
 const amount = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
 const cleanText = (v: unknown, max = 400): string | null =>
 	typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null;
-function imageUrl(p: any): string | null {
-	const value = p.thumbnails?.[0]?.[0];
-	if (typeof value !== 'string') return null;
-	try {
-		const u = new URL(value);
-		return u.protocol === 'https:' && u.hostname === 'images.thdstatic.com' && !u.username && !u.password
-			? u.href
-			: null;
-	} catch {
-		return null;
-	}
-}
 export function normalizeDiscovery(
 	raw: unknown,
 	query: DiscoveryQuery,
@@ -128,7 +117,7 @@ export function normalizeDiscovery(
 			kind,
 			promotion,
 			productUrl: `https://www.homedepot.com/p/${id}`,
-			imageUrl: imageUrl(p),
+			imageUrl: homeDepotImage(p.thumbnails),
 			pickupText: cleanText(p.pickup),
 			quantity: local ? pickup!.quantity : null,
 			pickupStatus,

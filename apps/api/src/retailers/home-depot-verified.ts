@@ -1,3 +1,4 @@
+import { homeDepotImage } from './home-depot-image.js';
 import type { DiscoveryQuery, DiscoveryResponse, DiscoveredDeal } from '@flipscout/types';
 import { HomeDepotDiscovery } from './home-depot-discovery.js';
 import { normalizeHomeDepotPilot } from './home-depot-pilot.js';
@@ -30,6 +31,7 @@ export function verifyHomeDepotDeal(
 	return {
 		...candidate,
 		title: detail.productName,
+		imageUrl: homeDepotImage(p.images) ?? candidate.imageUrl,
 		price,
 		originalPrice: sale ? original : null,
 		savings: sale ? Math.round((original! - price) * 100) / 100 : null,

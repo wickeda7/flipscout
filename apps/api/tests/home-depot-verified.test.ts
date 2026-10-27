@@ -95,3 +95,26 @@ test('successful checks return coverage and omit products no longer discounted',
 	assert.equal(r.deals.length, 0);
 	assert.equal(r.verificationCoverage.completed, 1);
 });
+
+test('largest supplied main image replaces search thumbnail', () => {
+	const f = fixture();
+	f.product_results.images = [
+		[
+			'https://images.thdstatic.com/productImages/main_65.jpg',
+			'https://images.thdstatic.com/productImages/main_1000.jpg',
+			'https://images.thdstatic.com/productImages/main_300.jpg',
+		],
+		['https://images.thdstatic.com/productImages/alternate_2000.jpg'],
+	];
+	assert.equal(verifyHomeDepotDeal(f, candidate, result)?.imageUrl, f.product_results.images[0][1]);
+});
+test('missing product images retain the search image', () => {
+	assert.equal(
+		verifyHomeDepotDeal(
+			fixture(),
+			{ ...candidate, imageUrl: 'https://images.thdstatic.com/productImages/main_600.jpg' },
+			result,
+		)?.imageUrl,
+		'https://images.thdstatic.com/productImages/main_600.jpg',
+	);
+});
