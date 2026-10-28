@@ -32,7 +32,8 @@
 		"test:discovery:cache": "yarn workspace @flipscout/api test:discovery:cache",
 		"test:walmart": "yarn workspace @flipscout/api test:walmart",
 		"test:shopping": "yarn workspace @flipscout/api test:shopping",
-		"check:retailers": "yarn workspace @flipscout/api check:retailers"
+		"check:retailers": "yarn workspace @flipscout/api check:retailers",
+		"test:target": "yarn workspace @flipscout/api test:target"
 	},
 	"engines": {
 		"node": ">=20.9.0"

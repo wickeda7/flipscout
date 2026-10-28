@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
 		// carry thumbnail IDs and sizing parameters, so they must remain allowed.
 		remotePatterns: [
 			'images.thdstatic.com',
+			'target.scene7.com',
 			'i5.walmartimages.com',
 			'*.gstatic.com',
 			'serpapi.com',

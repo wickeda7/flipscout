@@ -362,7 +362,7 @@ export interface DiscoveredDeal {
 export interface DiscoveryResponse {
 	verificationCoverage?: { completed: number; failed: number; total: number };
 	cache?: { source: 'database' | 'provider'; fetchedAt: string; expiresAt: string };
-	source: 'serpapi-home-depot' | 'serpapi-walmart' | 'serpapi-google-shopping';
+	source: 'serpapi-target' | 'serpapi-home-depot' | 'serpapi-walmart' | 'serpapi-google-shopping';
 	retailer: (typeof discoveryRetailers)[number]['name'];
 	storeId: string | null;
 	storeName: string | null;

@@ -1,4 +1,6 @@
 'use client';
+
+import { SearchProgress } from './SearchProgress';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -202,7 +204,9 @@ function DiscoveryForm() {
 							{discoveryRetailers.map((r) => (
 								<option key={r.id} value={r.id}>
 									{r.name}
-									{r.id === 'home-depot' || r.id === 'walmart' ? '' : ` — ${t('discover.onlineOffers')}`}
+									{r.id === 'home-depot' || r.id === 'walmart' || r.id === 'target'
+										? ''
+										: ` — ${t('discover.onlineOffers')}`}
 								</option>
 							))}
 						</select>
@@ -223,7 +227,7 @@ function DiscoveryForm() {
 					<label className='text-sm'>
 						{t('discover.radius')}
 						<select
-							disabled={retailer !== 'home-depot' && retailer !== 'walmart'}
+							disabled={retailer !== 'home-depot' && retailer !== 'walmart' && retailer !== 'target'}
 							value={radiusMiles}
 							onChange={(e) => setRadiusMiles(Number(e.target.value))}
 							className='mt-2 w-full rounded-xl border border-white/20 bg-neutral-950 p-3'>
@@ -291,7 +295,9 @@ function DiscoveryForm() {
 							? 'discover.coverage'
 							: retailer === 'walmart'
 								? 'discover.walmartCoverage'
-								: 'discover.shoppingCoverage',
+								: retailer === 'target'
+									? 'discover.targetCoverage'
+									: 'discover.shoppingCoverage',
 					)}
 				</p>
 				<div aria-live='polite' aria-busy={loading}>
@@ -301,7 +307,12 @@ function DiscoveryForm() {
 							<p className='mt-2 text-sm text-neutral-400'>{t('discover.startHelp')}</p>
 						</div>
 					)}
-					{loading && <p className='py-12 text-neutral-400'>{t('discover.wait')}</p>}
+					{loading && query && (
+						<SearchProgress
+							retailer={discoveryRetailers.find((r) => r.id === query.retailer)?.name ?? 'Home Depot'}
+							zip={query.zip ?? '33511'}
+						/>
+					)}
 					{failed && (
 						<div role='alert' className='rounded-xl bg-amber-500/10 p-5 text-amber-200'>
 							<p>{t(`discover.${failed}`)}</p>
@@ -465,6 +476,7 @@ function DiscoveryForm() {
 													)}
 												</p>
 											)}
+											{deal.promotion && <p className='mt-2 text-xs text-neutral-400'>{deal.promotion}</p>}
 											{deal.kind === 'penny' && (
 												<p className='mt-3 text-xs text-amber-200'>{t('discover.verifyPenny')}</p>
 											)}

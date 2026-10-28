@@ -1,3 +1,4 @@
+import { discoverTarget, targetParams } from './target-discovery.js';
 import { discoverWalmart } from './walmart-discovery.js';
 import { Pool } from 'pg';
 import { RequestError } from '../security/request-error.js';
@@ -15,7 +16,8 @@ export interface CachePool {
 	end?(): Promise<void>;
 }
 export function discoveryCacheScope(input: DiscoveryQuery) {
-	if (isShoppingRetailer(input.retailer)) shoppingParams(input);
+	if (input.retailer === 'target') targetParams(input);
+	else if (isShoppingRetailer(input.retailer)) shoppingParams(input);
 	// Radius is applied after retrieving the maximum supported area. Deal types filter locally.
 	const query: DiscoveryQuery = {
 		retailer: input.retailer ?? 'home-depot',
@@ -28,11 +30,13 @@ export function discoveryCacheScope(input: DiscoveryQuery) {
 	return {
 		query,
 		key: JSON.stringify([
-			query.retailer === 'walmart'
-				? 'walmart-verified-v1'
-				: isShoppingRetailer(query.retailer)
-					? 'shopping-v1'
-					: 'home-depot-verified-v1',
+			query.retailer === 'target'
+				? 'target-v1'
+				: query.retailer === 'walmart'
+					? 'walmart-verified-v1'
+					: isShoppingRetailer(query.retailer)
+						? 'shopping-v1'
+						: 'home-depot-verified-v1',
 			query.zip,
 			query.retailer,
 			query.category,
@@ -41,6 +45,7 @@ export function discoveryCacheScope(input: DiscoveryQuery) {
 	};
 }
 export function discoverRetailer(query: DiscoveryQuery): Promise<DiscoveryResponse> {
+	if (query.retailer === 'target') return discoverTarget(query);
 	if (query.retailer === 'walmart') return discoverWalmart(query);
 	if (isShoppingRetailer(query.retailer)) return discoverShopping(query);
 	if (!query.retailer || query.retailer === 'home-depot') return discoverVerifiedHomeDepot(query);
