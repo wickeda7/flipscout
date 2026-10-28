@@ -297,9 +297,29 @@ function DiscoveryForm() {
 								? 'discover.walmartCoverage'
 								: retailer === 'target'
 									? 'discover.targetCoverage'
-									: 'discover.shoppingCoverage',
+									: retailer === 'dollar-general'
+										? 'discover.dgCoverage'
+										: 'discover.shoppingCoverage',
 					)}
 				</p>
+				{retailer === 'dollar-general' && (
+					<nav aria-label={t('discover.dgOfficial')} className='mb-5 flex flex-wrap gap-3 text-sm'>
+						{([
+							['https://www.dollargeneral.com/c/on-sale', 'discover.dgSales'],
+							['https://www.dollargeneral.com/deals/weekly-ads', 'discover.dgWeekly'],
+							['https://www.dollargeneral.com/app', 'discover.dgApp'],
+						] as const).map(([href, label]) => (
+							<a
+								key={href}
+								href={href}
+								target='_blank'
+								rel='noopener noreferrer'
+								className='rounded-lg border border-white/20 px-3 py-2 underline hover:bg-white/10'>
+								{t(label)}
+							</a>
+						))}
+					</nav>
+				)}
 				<div aria-live='polite' aria-busy={loading}>
 					{!query && (
 						<div className='rounded-2xl border border-dashed border-white/20 p-8'>
@@ -402,7 +422,7 @@ function DiscoveryForm() {
 								</p>
 							</div>
 							{deals.length === 0 && result.location?.covered !== false && (
-								<p className='rounded-xl border border-white/10 p-6 text-neutral-400'>{t('discover.empty')}</p>
+								<p className='rounded-xl border border-white/10 p-6 text-neutral-400'>{t(result.query.retailer === 'dollar-general' && result.deals.length === 0 && result.diagnostics?.merchantMatched === 0 ? 'discover.dgNoMerchant' : 'discover.empty')}</p>
 							)}
 							<div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3'>
 								{deals.map((deal) => (

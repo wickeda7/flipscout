@@ -73,6 +73,13 @@ const en = {
 	'discover.expires': 'Next refresh after',
 	'discover.databaseError':
 		'Search storage is unavailable or needs an update. Ask your administrator to check the database and run migrations.',
+	'discover.dgOfficial': 'Dollar General official resources',
+	'discover.dgNoMerchant': 'The completed searches returned no Dollar General seller offers. This feed cannot currently show DG deals for this search; it does not mean your store has no sales or clearance. Use the official DG sales or weekly-ad links above.',
+ 'discover.dgSales': 'DG sales',
+	'discover.dgWeekly': 'DG weekly ad',
+	'discover.dgApp': 'DG app',
+	'discover.dgCoverage':
+		'Dollar General offers from six Google Shopping department searches. This is not a direct DG inventory connection. Local prices, stock and penny availability are unverified; the radius does not limit these online offers. Check DG sales or the weekly ad for store-specific offers. Coupons and cash back may have separate conditions.',
 	'discover.targetCoverage':
 		'Target combines six department searches at Brandon store #812. Coverage is within the selected radius using ZIP-area distances. Exact-price offers only; no shelf quantity or independent product verification. Online prices may differ in store.',
 	'discover.walmartCoverage':
@@ -610,6 +617,13 @@ const vi: Record<keyof typeof en, string> = {
 	'discover.expires': 'Làm mới sau',
 	'discover.databaseError':
 		'Bộ nhớ tìm kiếm không khả dụng hoặc cần cập nhật. Nhờ quản trị viên kiểm tra cơ sở dữ liệu và chạy migration.',
+	'discover.dgOfficial': 'Thông tin chính thức từ Dollar General',
+	'discover.dgNoMerchant': 'Các lượt tìm kiếm hoàn tất không trả về ưu đãi từ người bán Dollar General. Nguồn này hiện không cung cấp ưu đãi DG cho tìm kiếm này; điều đó không có nghĩa cửa hàng không có khuyến mãi hoặc thanh lý. Xem các liên kết khuyến mãi hoặc ưu đãi tuần chính thức của DG ở trên.',
+ 'discover.dgSales': 'Khuyến mãi DG',
+	'discover.dgWeekly': 'Ưu đãi tuần của DG',
+	'discover.dgApp': 'Ứng dụng DG',
+	'discover.dgCoverage':
+		'Ưu đãi Dollar General từ sáu nhóm tìm kiếm Google Shopping. Đây không phải kết nối trực tiếp với tồn kho DG. Chưa xác minh giá tại cửa hàng, tồn kho hoặc hàng một xu; bán kính không giới hạn các ưu đãi trực tuyến này. Xem khuyến mãi hoặc ưu đãi tuần của DG để kiểm tra theo cửa hàng. Phiếu giảm giá và hoàn tiền có thể có điều kiện riêng.',
 	'discover.targetCoverage':
 		'Kết hợp sáu nhóm tìm kiếm Target tại cửa hàng Brandon #812 trong bán kính tính theo vùng ZIP. Chỉ hiển thị giá cụ thể; không xác minh độc lập sản phẩm hoặc số lượng trên kệ. Giá trực tuyến có thể khác tại cửa hàng.',
 	'discover.walmartCoverage':

@@ -169,3 +169,41 @@ test('ZIP locations use a verified state and failed lookups avoid paid requests'
 	assert.equal(normalizeShopping(f, query, location).deals.length, 1);
 	assert.throws(() => normalizeShopping(f, query, '10001,New York,United States'), /CONTEXT_MISMATCH/);
 });
+
+test('Dollar General searches all departments without inventing local inventory or penny prices', async () => {
+	const q = { ...query, retailer: 'dollar-general' as const };
+	const terms = new Set<string>();
+	const result = await discoverShopping(
+		q,
+		async (params) => {
+			terms.add(params.q);
+			return {
+				...fixture(q),
+				search_parameters: { ...params, location_requested: params.location },
+				shopping_results: [
+					{ ...product(), source: 'Dollar General', link: 'https://www.dollargeneral.com/p/test/123' },
+					{ ...product(), product_id: '987', source: 'Dollar Tree' },
+					{
+						...product(),
+						product_id: '988',
+						source: 'Dollar General',
+						old_price: undefined,
+						extracted_old_price: undefined,
+						title: 'Penny clearance coupon save $5',
+					},
+				],
+			};
+		},
+		async () => '33511,United States',
+	);
+	assert.equal(terms.size, 6);
+	assert.equal(result.deals.length, 1);
+	assert.equal(result.deals[0].kind, 'sale');
+	assert.equal(result.deals[0].productUrl, 'https://www.dollargeneral.com/p/test/123');
+	assert.equal(result.deals[0].quantity, null);
+	assert.equal(result.storeId, null);
+	assert.equal(result.offerScope, 'online');
+	assert.equal(result.diagnostics?.wrongMerchant, 6);
+	assert.equal(result.diagnostics?.notDiscounted, 6);
+	assert.equal(discoveryCacheScope(q).key, discoveryCacheScope({ ...q, kind: 'penny', radiusMiles: 5 }).key);
+});
