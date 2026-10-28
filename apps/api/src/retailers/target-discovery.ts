@@ -1,3 +1,4 @@
+import { searchDepartments, shoppingDepartments } from './department-search.js';
 import type { DiscoveryQuery, DiscoveryResponse, DiscoveredDeal } from '@flipscout/types';
 import { requestSerpApi } from './serpapi-request.js';
 import { locateZip, distanceMiles } from './discovery-location.js';
@@ -37,8 +38,8 @@ function price(text: unknown, value: unknown): number | null {
 		return null;
 	return Number(text.trim().replace(/[$,]/g, '')) === value ? value : null;
 }
-export function normalizeTarget(raw: any, query: DiscoveryQuery): DiscoveryResponse {
-	const params = targetParams(query);
+export function normalizeTarget(raw: any, query: DiscoveryQuery, term = 'clearance'): DiscoveryResponse {
+	const params = { ...targetParams(query), q: term };
 	if (raw?.error || raw?.search_metadata?.status !== 'Success') throw new ConnectorError('TARGET_PROVIDER_FAILED');
 	for (const key of ['engine', 'q', 'store_id', 'delivery_zip', 'page'] as const) {
 		if (String(raw.search_parameters?.[key] ?? (key === 'page' ? '1' : '')) !== params[key])
@@ -148,5 +149,9 @@ export async function discoverTarget(
 			hasMore: false,
 			location,
 		};
-	return { ...normalizeTarget(await request(params), query), location };
+	const result = await searchDepartments(shoppingDepartments.target, async (department) => {
+		const term = `${department} clearance`;
+		return normalizeTarget(await request({ ...params, q: term }), query, term);
+	});
+	return { ...result, location };
 }

@@ -1,6 +1,8 @@
 # Target discovery
 
-Target now routes to SerpApi engine=target, q=clearance, store_id=812, delivery_zip=<requested ZIP>, page=<requested page>. Official store listing: https://www.target.com/sl/brandon/812. API documentation: https://serpapi.com/target-search-api.
+Target now routes to SerpApi engine=target, q=<department> clearance, store_id=812, delivery_zip=<requested ZIP>, page=<requested page>. Official store listing: https://www.target.com/sl/brandon/812. API documentation: https://serpapi.com/target-search-api.
+
+Each page combines six searches: home, electronics, toys, outdoor, clothing, and beauty. Duplicate TCINs are merged and partial failures are reported.
 
 This initial integration covers Brandon #812 only, up to 25 miles measured between ZIP-area centroids, not exact store coordinates. Other areas show no connected coverage without making a paid search. It does not scan every Target store or every clearance product. Google Shopping cache entries are bypassed by a new Target cache version. Existing 12-hour PostgreSQL cache and client-side filtering/sorting remain unchanged.
 

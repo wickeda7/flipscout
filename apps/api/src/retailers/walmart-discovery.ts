@@ -87,6 +87,15 @@ export function verifiedWalmartDeal(raw: any, candidate: any, store: string): Di
 		},
 	};
 }
+export const walmartSearchTerms = [
+	'tools clearance',
+	'home clearance',
+	'electronics clearance',
+	'toys clearance',
+	'outdoor clearance',
+	'clothing clearance',
+];
+
 export async function discoverWalmart(
 	query: DiscoveryQuery,
 	request: typeof requestSerpApi = requestSerpApi,
@@ -125,32 +134,72 @@ export async function discoverWalmart(
 		hasMore: false,
 	};
 	if (!result.location!.covered) return result;
-	const raw: any = await request({
-		engine: 'walmart',
-		query: 'clearance',
-		store_id: store.id,
-		page: String(query.page),
-	});
-	context(raw, 'walmart', store.id);
-	if (
-		raw.search_parameters.query !== 'clearance' ||
-		Number(raw.search_parameters.page ?? 1) !== query.page ||
-		!Array.isArray(raw.organic_results)
-	)
-		throw new ConnectorError('WALMART_CONTEXT_MISMATCH');
-	result.productsChecked = raw.organic_results.length;
+	const pages: any[][] = walmartSearchTerms.map(() => []);
+	let nextSearch = 0,
+		searchesCompleted = 0;
+	let firstError: unknown;
+	await Promise.all(
+		Array.from({ length: 2 }, async () => {
+			while (nextSearch < walmartSearchTerms.length) {
+				const index = nextSearch++,
+					term = walmartSearchTerms[index];
+				try {
+					const raw: any = await request({
+						engine: 'walmart',
+						query: term,
+						store_id: store.id,
+						page: String(query.page),
+					});
+					context(raw, 'walmart', store.id);
+					if (
+						raw.search_parameters.query !== term ||
+						Number(raw.search_parameters.page ?? 1) !== query.page ||
+						!Array.isArray(raw.organic_results) ||
+						raw.organic_results.length > 100
+					)
+						throw new ConnectorError('WALMART_CONTEXT_MISMATCH');
+					pages[index] = raw.organic_results;
+					searchesCompleted++;
+					result.productsChecked += raw.organic_results.length;
+					result.hasMore ||=
+						query.page < 10 && Boolean(raw.serpapi_pagination?.next || raw.serpapi_pagination?.next_link);
+				} catch (error) {
+					firstError ??= error;
+				}
+			}
+		}),
+	);
+	if (!searchesCompleted) throw firstError;
+	result.coverage = {
+		completed: searchesCompleted,
+		failed: walmartSearchTerms.length - searchesCompleted,
+		total: walmartSearchTerms.length,
+	};
 	const seen = new Set<string>();
-	const candidates = raw.organic_results.filter((p: any) => {
-		const id = itemId(p?.us_item_id),
-			price = amount(p?.primary_offer?.offer_price),
-			was = amount(p?.primary_offer?.was_price);
-		if (!id || seen.has(id) || !walmartSeller(p.seller_name) || !price || !was || was <= price) return false;
-		seen.add(id);
-		return true;
-	});
+	const eligible = pages.map((rows) =>
+		rows.filter((p: any) => {
+			const id = itemId(p?.us_item_id),
+				price = amount(p?.primary_offer?.offer_price),
+				was = amount(p?.primary_offer?.was_price);
+			return id && walmartSeller(p.seller_name) && price && was && was > price;
+		}),
+	);
+	// Interleave departments before the cap so the first query cannot monopolize verification.
+	const candidates: any[] = [];
+	for (let row = 0; row < Math.max(...eligible.map((rows) => rows.length)); row++) {
+		for (const rows of eligible) {
+			const p = rows[row];
+			if (!p) continue;
+			const id = itemId(p.us_item_id)!;
+			if (!seen.has(id)) {
+				seen.add(id);
+				candidates.push(p);
+			}
+		}
+	}
 	// Bound paid requests and latency. Omitted/unavailable candidates are explicitly reported.
 	const selected = candidates.slice(0, 40),
-		deadline = Date.now() + 240000;
+		deadline = Date.now() + 180000;
 	let cursor = 0,
 		completed = 0,
 		failures = 0;
@@ -175,9 +224,8 @@ export async function discoverWalmart(
 		}),
 	);
 	if (selected.length && !completed && failures) throw new ConnectorError('WALMART_VERIFICATION_UNAVAILABLE');
-	result.coverage = { completed, failed: candidates.length - completed, total: candidates.length };
+	result.verificationCoverage = { completed, failed: candidates.length - completed, total: candidates.length };
 	result.deals.sort((a, b) => a.id.localeCompare(b.id));
 	result.skippedProducts = result.productsChecked - result.deals.length;
-	result.hasMore = Boolean(raw.serpapi_pagination?.next || raw.serpapi_pagination?.next_link) && query.page < 10;
 	return result;
 }

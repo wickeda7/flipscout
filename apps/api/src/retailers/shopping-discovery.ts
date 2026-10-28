@@ -1,3 +1,4 @@
+import { searchDepartments, shoppingDepartments } from './department-search.js';
 import {
 	discoveryRetailers,
 	type DiscoveryQuery,
@@ -88,6 +89,7 @@ export function normalizeShopping(
 	raw: unknown,
 	query: DiscoveryQuery,
 	expectedLocation = shoppingParams(query).location,
+	expectedQuery = shoppingParams(query).q,
 ): DiscoveryResponse {
 	const expected = shoppingParams(query);
 	if (!object(raw) || raw.error || raw.search_metadata?.status !== 'Success')
@@ -96,7 +98,7 @@ export function normalizeShopping(
 	if (
 		!object(params) ||
 		params.engine !== expected.engine ||
-		params.q !== expected.q ||
+		params.q !== expectedQuery ||
 		params.gl !== 'us' ||
 		params.hl !== 'en' ||
 		(params.location_requested ?? params.location) !== expectedLocation
@@ -215,5 +217,8 @@ export async function discoverShopping(
 ): Promise<DiscoveryResponse> {
 	const params = shoppingParams(query);
 	params.location = await resolveLocation(query.zip!);
-	return normalizeShopping(await request(params), query, params.location);
+	return searchDepartments(shoppingDepartments[query.retailer!] ?? ['all'], async (department) => {
+		const q = `${shoppingMerchants[query.retailer as ShoppingRetailer].query} ${department} clearance sale`;
+		return normalizeShopping(await request({ ...params, q }), query, params.location, q);
+	});
 }

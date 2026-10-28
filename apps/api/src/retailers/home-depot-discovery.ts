@@ -250,7 +250,12 @@ export class HomeDepotDiscovery {
 				throw failure.reason;
 			}
 			const unique = new Map<string, DiscoveredDeal>();
-			for (const page of successful) for (const deal of page.deals) if (!unique.has(deal.id)) unique.set(deal.id, deal);
+			for (let row = 0; row < Math.max(...successful.map((page) => page.deals.length)); row++) {
+				for (const page of successful) {
+					const deal = page.deals[row];
+					if (deal && !unique.has(deal.id)) unique.set(deal.id, deal);
+				}
+			}
 			const result: DiscoveryResponse = {
 				...successful[0],
 				query,

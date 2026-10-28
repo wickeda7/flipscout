@@ -74,9 +74,9 @@ const en = {
 	'discover.databaseError':
 		'Search storage is unavailable or needs an update. Ask your administrator to check the database and run migrations.',
 	'discover.targetCoverage':
-		'Target search uses Brandon store #812. Coverage is within the selected radius using ZIP-area distances. Exact-price offers only; no shelf quantity or independent product verification. Online prices may differ in store.',
+		'Target combines six department searches at Brandon store #812. Coverage is within the selected radius using ZIP-area distances. Exact-price offers only; no shelf quantity or independent product verification. Online prices may differ in store.',
 	'discover.walmartCoverage':
-		'Walmart item details checked for one nearby store. Distance uses ZIP areas. Set the same store, seller and variant on Walmart; prices may change. This is a clearance search page, not all store inventory.',
+		'Walmart item details checked for one nearby store. Distance uses ZIP areas. Set the same store, seller and variant on Walmart; prices may change. Search combines six department keywords; it does not cover all store inventory.',
 	'discover.unsupportedLocation': 'The provider could not resolve this location. Check your US ZIP code and try again.',
 	'discover.viewRetailer': 'View at',
 	'discover.onlineOffers': 'Online offers',
@@ -87,7 +87,7 @@ const en = {
 	'discover.unavailable': 'Unavailable',
 	'discover.viewOffer': 'View offer',
 	'discover.shoppingCoverage':
-		'Online offers reported by Google Shopping for the selected retailer. Your ZIP sets the search location; radius, store stock and in-store prices are not verified. Membership, coupons and checkout conditions may apply. One page of reported offers is available; this is not a complete clearance scan.',
+		'Offers combined from six department searches on Google Shopping for the selected retailer. Your ZIP sets the search location; radius, store stock and in-store prices are not verified. Membership, coupons and checkout conditions may apply. One page of reported offers is available; this is not a complete clearance scan.',
 	'discover.merchantMatched': 'listings matched this retailer',
 	'discover.wrongMerchant': 'other-merchant listings excluded',
 	'discover.notDiscounted': 'listings without a supported markdown excluded',
@@ -611,9 +611,9 @@ const vi: Record<keyof typeof en, string> = {
 	'discover.databaseError':
 		'Bộ nhớ tìm kiếm không khả dụng hoặc cần cập nhật. Nhờ quản trị viên kiểm tra cơ sở dữ liệu và chạy migration.',
 	'discover.targetCoverage':
-		'Tìm Target tại cửa hàng Brandon #812 trong bán kính tính theo vùng ZIP. Chỉ hiển thị giá cụ thể; không xác minh độc lập sản phẩm hoặc số lượng trên kệ. Giá trực tuyến có thể khác tại cửa hàng.',
+		'Kết hợp sáu nhóm tìm kiếm Target tại cửa hàng Brandon #812 trong bán kính tính theo vùng ZIP. Chỉ hiển thị giá cụ thể; không xác minh độc lập sản phẩm hoặc số lượng trên kệ. Giá trực tuyến có thể khác tại cửa hàng.',
 	'discover.walmartCoverage':
-		'Đối chiếu chi tiết Walmart tại một cửa hàng gần bạn. Khoảng cách tính theo vùng ZIP. Chọn cùng cửa hàng, người bán và mẫu trên Walmart; giá có thể thay đổi. Đây là một trang tìm hàng giảm giá, không phải toàn bộ tồn kho.',
+		'Đối chiếu chi tiết Walmart tại một cửa hàng gần bạn. Khoảng cách tính theo vùng ZIP. Chọn cùng cửa hàng, người bán và mẫu trên Walmart; giá có thể thay đổi. Tìm kiếm kết hợp sáu nhóm từ khóa; không bao gồm toàn bộ tồn kho.',
 	'discover.unsupportedLocation': 'Nhà cung cấp không xác định được vị trí này. Kiểm tra mã ZIP Hoa Kỳ và thử lại.',
 	'discover.viewRetailer': 'Xem tại',
 	'discover.onlineOffers': 'Ưu đãi trực tuyến',
@@ -624,7 +624,7 @@ const vi: Record<keyof typeof en, string> = {
 	'discover.unavailable': 'Không có',
 	'discover.viewOffer': 'Xem ưu đãi',
 	'discover.shoppingCoverage':
-		'Ưu đãi trực tuyến do Google Shopping ghi nhận cho nhà bán lẻ đã chọn. Mã ZIP xác định vị trí tìm kiếm; chưa xác nhận bán kính, tồn kho hoặc giá tại cửa hàng. Có thể áp dụng điều kiện thành viên, phiếu giảm giá và thanh toán. Chỉ có một trang ưu đãi được ghi nhận; đây không phải quét toàn bộ hàng thanh lý.',
+		'Ưu đãi kết hợp từ sáu nhóm tìm kiếm trên Google Shopping cho nhà bán lẻ đã chọn. Mã ZIP xác định vị trí tìm kiếm; chưa xác nhận bán kính, tồn kho hoặc giá tại cửa hàng. Có thể áp dụng điều kiện thành viên, phiếu giảm giá và thanh toán. Chỉ có một trang ưu đãi được ghi nhận; đây không phải quét toàn bộ hàng thanh lý.',
 	'discover.merchantMatched': 'kết quả khớp nhà bán lẻ này',
 	'discover.wrongMerchant': 'kết quả từ người bán khác đã loại',
 	'discover.notDiscounted': 'kết quả chưa có bằng chứng giảm giá đã loại',

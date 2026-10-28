@@ -58,6 +58,21 @@ test('outside connected area makes no paid call', async () => {
 	assert.equal(r.location?.covered, false);
 });
 test('cache version bypasses Google results and filters share the same scan', () => {
-	assert.equal(JSON.parse(discoveryCacheScope(q).key)[0], 'target-v1');
+	assert.equal(JSON.parse(discoveryCacheScope(q).key)[0], 'target-departments-v2');
 	assert.equal(discoveryCacheScope(q).key, discoveryCacheScope({ ...q, kind: 'penny', radiusMiles: 5 }).key);
+});
+
+test('Target searches six departments and merges duplicate products', async () => {
+	const terms: string[] = [];
+	const result = await discoverTarget(
+		q,
+		async (params) => {
+			terms.push(params.q);
+			return { ...fixture(), search_parameters: params };
+		},
+		async () => ({ id: '812', name: 'Brandon', distance: 2 }),
+	);
+	assert.equal(new Set(terms).size, 6);
+	assert.equal(result.deals.length, 1);
+	assert.equal(result.coverage?.completed, 6);
 });

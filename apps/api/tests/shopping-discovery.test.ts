@@ -124,14 +124,14 @@ test('online searches cannot spend credits on duplicate pages or category/filter
 	const request = async (params: Record<string, string>) => {
 		calls++;
 		assert.equal(params.sort_by, undefined);
-		return fixture();
+		return { ...fixture(), search_parameters: { ...params, location_requested: params.location } };
 	};
 	await discoverShopping(query, request, async (zip) => `${zip},United States`);
-	assert.equal(calls, 1);
+	assert.equal(calls, 6);
 	await assert.rejects(discoverShopping({ ...query, page: 2 }, request));
 	await assert.rejects(discoverShopping({ ...query, category: 'tools' }, request));
 	await assert.rejects(discoverShopping({ ...query, retailer: 'home-depot' }, request));
-	assert.equal(calls, 1);
+	assert.equal(calls, 6);
 	assert.equal(discoveryCacheScope(query).key, discoveryCacheScope({ ...query, radiusMiles: 5, kind: 'penny' }).key);
 	assert.notEqual(discoveryCacheScope(query).key, discoveryCacheScope({ ...query, retailer: 'cvs' }).key);
 });

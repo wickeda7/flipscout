@@ -31,12 +31,12 @@ export function discoveryCacheScope(input: DiscoveryQuery) {
 		query,
 		key: JSON.stringify([
 			query.retailer === 'target'
-				? 'target-v1'
+				? 'target-departments-v2'
 				: query.retailer === 'walmart'
-					? 'walmart-verified-v1'
+					? 'walmart-multidepartment-v2'
 					: isShoppingRetailer(query.retailer)
-						? 'shopping-v1'
-						: 'home-depot-verified-v1',
+						? 'shopping-departments-v2'
+						: 'home-depot-departments-v2',
 			query.zip,
 			query.retailer,
 			query.category,

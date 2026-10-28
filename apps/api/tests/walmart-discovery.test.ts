@@ -75,7 +75,8 @@ test('search then verify with Walmart engines; no Google fallback', async () => 
 		},
 		resolve,
 	);
-	assert.deepEqual(calls, ['walmart', 'walmart_product']);
+	assert.equal(calls.filter((x) => x === 'walmart').length, 6);
+	assert.equal(calls.filter((x) => x === 'walmart_product').length, 1);
 	assert.equal(r.deals.length, 1);
 	assert.equal(r.source, 'serpapi-walmart');
 });
@@ -106,7 +107,7 @@ test('no provider calls outside radius and failed verification is not empty succ
 	assert.equal(r.location?.covered, false);
 });
 test('cache isolates old Google data and ZIPs while sharing filters', () => {
-	assert.equal(JSON.parse(discoveryCacheScope(query).key)[0], 'walmart-verified-v1');
+	assert.equal(JSON.parse(discoveryCacheScope(query).key)[0], 'walmart-multidepartment-v2');
 	assert.notEqual(discoveryCacheScope(query).key, discoveryCacheScope({ ...query, zip: '10001' }).key);
 	assert.equal(discoveryCacheScope(query).key, discoveryCacheScope({ ...query, kind: 'penny', radiusMiles: 5 }).key);
 });
@@ -123,4 +124,60 @@ test('catalog resolves multiple US regions to nearby listed stores', async () =>
 		assert.match(store.id, /^\d+$/);
 		assert.ok(!store.address.endsWith(', MX'));
 	}
+});
+
+test('verification cap includes every department and reports skipped checks', async () => {
+	const { walmartSearchTerms } = await import('../src/retailers/walmart-discovery.js');
+	const checked: string[] = [];
+	const r = await discoverWalmart(
+		query,
+		async (p) => {
+			if (p.engine === 'walmart')
+				return {
+					search_metadata: { status: 'Success' },
+					search_parameters: p,
+					search_information: { location: { store_id: '2387' } },
+					organic_results: Array.from({ length: 12 }, (_, i) => ({
+						...candidate,
+						us_item_id: String(1000 + walmartSearchTerms.indexOf(p.query) * 100 + i),
+					})),
+				};
+			checked.push(p.product_id);
+			const d = detail();
+			d.search_parameters.product_id = p.product_id;
+			d.product_result.us_item_id = p.product_id;
+			return d;
+		},
+		resolve,
+	);
+	assert.equal(checked.length, 40);
+	assert.equal(new Set(checked.map((id) => Math.floor((Number(id) - 1000) / 100))).size, 6);
+	assert.equal(r.coverage?.completed, 6);
+	assert.equal(r.verificationCoverage?.failed, 32);
+});
+test('one failed department preserves others; all failures throw', async () => {
+	const r = await discoverWalmart(
+		query,
+		async (p) => {
+			if (p.query === 'tools clearance') throw Error('offline');
+			return {
+				search_metadata: { status: 'Success' },
+				search_parameters: p,
+				search_information: { location: { store_id: '2387' } },
+				organic_results: [],
+			};
+		},
+		resolve,
+	);
+	assert.equal(r.coverage?.failed, 1);
+	await assert.rejects(
+		discoverWalmart(
+			query,
+			async () => {
+				throw Error('offline');
+			},
+			resolve,
+		),
+		/offline/,
+	);
 });
